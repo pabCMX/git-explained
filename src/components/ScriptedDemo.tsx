@@ -1,6 +1,6 @@
-import { motion } from 'motion/react'
-import { useMemo, useState, type ReactNode } from 'react'
-import { runAll, type Action, type Result, type World } from '../git/sim'
+import { motion, useReducedMotion } from 'motion/react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { run, type Action, type Result, type World } from '../git/sim'
 import { AreasDiagram } from './AreasDiagram'
 import { DiffView, FilesView } from './FileViews'
 import { BisectView, BlameView } from './InspectViews'
@@ -27,33 +27,69 @@ const viewTitle = (v: View) => (isBlame(v) ? 'Who changed each line' : titles[v]
 
 const asList = (a: Step['do']) => (a === undefined ? [] : Array.isArray(a) ? a : [a])
 
-// Which way commits move in the remote view for one step.
-function flowOf(step: Step, result: Result): Flow {
-  const commands = asList(step.do).filter((a) => typeof a === 'string')
-  if (commands.some((a) => /git push/.test(a))) return result.ok ? 'up' : 'blocked'
-  if (commands.some((a) => /git (pull|fetch|clone)/.test(a))) return 'down'
+// Which way commits move in the remote view, for the command that ran last.
+function flowOf(action: Action | undefined, result: Result | undefined): Flow {
+  if (typeof action !== 'string' || !result) return null
+  if (/git push/.test(action)) return result.ok ? 'up' : 'blocked'
+  if (/git (pull|fetch|clone)/.test(action)) return 'down'
   return null
 }
 
 const captionClass =
   'text-[15px] leading-relaxed text-ink-2 [&_strong]:text-ink [&_code]:rounded [&_code]:bg-grid [&_code]:px-1 [&_code]:text-ink'
 
+// Delay before the first command of a step, and between the next ones, in milliseconds.
+const FIRST_DELAY = 500
+const NEXT_DELAY = 1000
+
+// One step, replayed one action at a time: the world before it, and the result after each action.
+// Like runAll, it stops at the first action that fails.
+type Play = { before: World; frames: Result[] }
+
+function playSteps(start: World, steps: Step[]): Play[] {
+  let w = start
+  return steps.map((s) => {
+    const before = w
+    const frames: Result[] = []
+    for (const a of asList(s.do)) {
+      const r = run(w, a)
+      frames.push(r)
+      w = r.world
+      if (!r.ok) break
+    }
+    return { before, frames }
+  })
+}
+
 /**
- * Plays a lesson script one step at a time. Each step runs its actions on the world from the step before.
- * The buttons sit at the top and every block reserves its tallest height, so nothing moves under the mouse.
+ * Plays a lesson script one step at a time. Inside a step, the commands run one by one, so the reader
+ * sees each command change the diagrams. The buttons sit at the top and every block reserves its
+ * tallest height, so nothing moves under the mouse.
  */
 export function ScriptedDemo({ start, steps, views }: { start: World; steps: Step[]; views: View[] }) {
+  const plays = useMemo(() => playSteps(start, steps), [start, steps])
+  const reduced = useReducedMotion()
   const [i, setI] = useState(0)
-  const results = useMemo(() => {
-    let w = start
-    return steps.map((s) => {
-      const r = runAll(w, asList(s.do))
-      w = r.world
-      return r
-    })
-  }, [start, steps])
+  // How many commands of step i have run.
+  const [done, setDone] = useState(0)
+  const play = plays[i]!
   const step = steps[i]!
-  const result = results[i]!
+  const total = play.frames.length
+  const shown = reduced ? total : done
+
+  useEffect(() => {
+    if (shown >= total) return
+    const t = setTimeout(() => setDone(shown + 1), shown === 0 ? FIRST_DELAY : NEXT_DELAY)
+    return () => clearTimeout(t)
+  }, [shown, total])
+
+  const go = (next: number, replay: boolean) => {
+    setI(next)
+    setDone(replay ? 0 : plays[next]!.frames.length)
+  }
+  const world = shown === 0 ? play.before : play.frames[shown - 1]!.world
+  const flow = flowOf(asList(step.do)[shown - 1], play.frames[shown - 1])
+  const everyWorld = plays.flatMap((p) => [p.before, ...p.frames.map((f) => f.world)])
 
   return (
     <section className="my-8 rounded-2xl border border-line bg-page p-3 sm:p-4" aria-label="Interactive demo">
@@ -65,22 +101,18 @@ export function ScriptedDemo({ start, steps, views }: { start: World; steps: Ste
         <span className="w-20 text-right text-xs text-muted tabular-nums">
           Step {i + 1} of {steps.length}
         </span>
-        <button
-          onClick={() => setI(0)}
-          disabled={i === 0}
-          className="rounded-lg px-2.5 py-1.5 text-sm text-ink-2 hover:bg-grid disabled:opacity-40"
-        >
+        <button onClick={() => go(0, false)} disabled={i === 0} className="rounded-lg px-2.5 py-1.5 text-sm text-ink-2 hover:bg-grid disabled:opacity-40">
           Start over
         </button>
         <button
-          onClick={() => setI(i - 1)}
+          onClick={() => go(i - 1, false)}
           disabled={i === 0}
           className="rounded-lg border border-line bg-surface px-3.5 py-1.5 text-sm font-medium hover:bg-grid disabled:opacity-40"
         >
           Back
         </button>
         <button
-          onClick={() => setI(i + 1)}
+          onClick={() => go(i + 1, true)}
           disabled={i === steps.length - 1}
           className="w-20 rounded-lg bg-accent py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
         >
@@ -102,24 +134,24 @@ export function ScriptedDemo({ start, steps, views }: { start: World; steps: Ste
           }
         />
         <Reserve
-          all={steps.map((s, k) => (
-            <ActionLog key={k} actions={asList(s.do)} result={results[k]!} />
+          all={plays.map((p, k) => (
+            <ActionLog key={k} actions={asList(steps[k]!.do)} frames={p.frames} done={p.frames.length} />
           ))}
-          live={<ActionLog actions={asList(step.do)} result={result} />}
+          live={<ActionLog actions={asList(step.do)} frames={play.frames} done={shown} onReplay={total > 1 && shown === total ? () => go(i, true) : undefined} />}
         />
       </div>
 
       <div className="mt-4 flex flex-col gap-3">
         {views.map((v) =>
           v === 'remote' ? (
-            <RemoteView key={v} world={result.world} flow={flowOf(step, result)} reserve={results.map((r) => r.world)} />
+            <RemoteView key={v} world={world} flow={flow} reserve={everyWorld} />
           ) : (
             <Panel key={v} title={viewTitle(v)}>
               <Reserve
-                all={results.map((r, k) => (
-                  <ViewBody key={k} view={v} world={r.world} />
+                all={everyWorld.map((w, k) => (
+                  <ViewBody key={k} view={v} world={w} />
                 ))}
-                live={<ViewBody view={v} world={result.world} />}
+                live={<ViewBody view={v} world={world} />}
               />
             </Panel>
           ),
@@ -138,16 +170,27 @@ function ViewBody({ view, world }: { view: View; world: World }) {
   return <DiffView world={world} />
 }
 
-function ActionLog({ actions, result }: { actions: Action[]; result: Result }) {
+/**
+ * The terminal for one step. Commands that ran show their output. Commands still to come are dimmed,
+ * so the reader sees what happens next.
+ */
+function ActionLog({ actions, frames, done, onReplay }: { actions: Action[]; frames: Result[]; done: number; onReplay?: () => void }) {
   if (!actions.length) {
     return <div className="hidden h-full rounded-xl bg-[#141413] p-3 font-mono text-sm text-[#898781] md:block">$ _</div>
   }
   return (
-    <div className="h-full rounded-xl bg-[#141413] p-3 font-mono text-[13px] leading-6 text-[#f0efec]">
+    <div className="relative h-full rounded-xl bg-[#141413] p-3 font-mono text-[13px] leading-6 text-[#f0efec]">
       {actions.map((a, k) => (
-        <div key={k}>{describe(a)}</div>
+        <div key={k} className={`transition-opacity duration-300 ${k < done ? '' : 'opacity-35'}`}>
+          <div>{describe(a)}</div>
+          {k < done && frames[k] && <OutputLines lines={frames[k].output} ok={frames[k].ok} />}
+        </div>
       ))}
-      <OutputLines lines={result.output} ok={result.ok} />
+      {onReplay && (
+        <button onClick={onReplay} className="absolute top-2 right-2 rounded-md px-2 py-0.5 font-sans text-xs text-[#c3c2b7] hover:bg-white/10">
+          Replay
+        </button>
+      )}
     </div>
   )
 }

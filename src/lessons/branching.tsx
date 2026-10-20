@@ -98,6 +98,7 @@ export function BranchesLesson() {
 
 const mergeStart = built({ 'soup.txt': SOUP, 'bread.txt': BREAD }, ['git init', 'git add .', 'git commit -m "First recipes"'])
 const mergeSteps: Step[] = [
+  { say: <>The cookbook has one commit on main, with the soup and the bread. Now you want to add a dessert.</> },
   {
     do: ['git switch -c dessert', { kind: 'write', path: 'pie.txt', content: recipe('Apple pie', '- 4 apples', '- 200 g flour', '- 100 g butter') }, 'git add pie.txt', 'git commit -m "Add apple pie"'],
     say: (

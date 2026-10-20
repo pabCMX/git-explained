@@ -153,6 +153,7 @@ export function RemotesLesson() {
 const sugarSoup = recipe('Leek soup', '- 2 leeks', '- 1 potato', '- 1 liter water', '- 1 tsp salt', '- 3 tbsp sugar')
 const undoStart = built({ 'soup.txt': SOUP, 'bread.txt': BREAD }, ['git init', 'git add .', 'git commit -m "First recipes"'])
 const undoSteps: Step[] = [
+  { say: <>The cookbook has one commit. Your folder matches it, so everything is saved.</> },
   {
     do: { kind: 'write', path: 'soup.txt', content: recipe('Leek soup', '- 2 leeks') },
     say: <>You delete most of the soup recipe by mistake, and you save the file. You did not commit.</>,

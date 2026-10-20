@@ -9,6 +9,10 @@ import * as team from './team'
 // Every lesson step must succeed, unless the step says it is meant to fail.
 describe('lesson scripts', () => {
   const all = [basics, branching, sharing, team, repair].flatMap((m) => m.scripts)
+  it.each(all.map((s, i) => [i, s] as const))('script %i shows the start before its first command', (_, { steps }) => {
+    expect(steps[0]!.do).toBeUndefined()
+  })
+
   it.each(all.map((s, i) => [i, s] as const))('script %i runs as written', (_, { start, steps }) => {
     let w = start
     steps.forEach((step, n) => {

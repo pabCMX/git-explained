@@ -17,11 +17,18 @@ const stashStart = built({ 'soup.txt': SOUP, 'bread.txt': BREAD }, [
 ])
 const stashSteps: Step[] = [
   {
+    say: (
+      <>
+        You are on the <strong>spicy</strong> branch. Its last commit adds a chili to the soup. Your folder matches that
+        commit.
+      </>
+    ),
+  },
+  {
     do: write('soup.txt', recipe('Leek soup', '- 2 leeks', '- 1 potato', '- 1 liter water', '- 1 tsp salt', '- 1 red chili', '- smoked paprika?')),
     say: (
       <>
-        You are on the <strong>spicy</strong> branch, in the middle of a change to <code>soup.txt</code>. The change is not
-        ready to commit.
+        You start a new change to <code>soup.txt</code>. You are in the middle of it, and it is not ready to commit.
       </>
     ),
   },
@@ -110,7 +117,14 @@ const teamStart = onlyOnRemote(
 )
 const SEEDS = recipe('Bread', '- 500 g flour', '- 7 g yeast', '- 300 ml water', '- seeds on top', 'Bake for 40 minutes.')
 const teamSteps: Step[] = [
-  { do: `git clone ${REMOTE_URL}`, say: <>You and Sam share the cookbook on a remote. You clone it.</> },
+  {
+    say: (
+      <>
+        You and Sam share the cookbook on a remote, at the top. Your computer does not have a copy yet.
+      </>
+    ),
+  },
+  { do: `git clone ${REMOTE_URL}`, say: <>You clone it.</> },
   {
     do: ['git switch -c pie', write('pie.txt', PIE), 'git add pie.txt', 'git commit -m "Add apple pie"'],
     say: (
@@ -193,8 +207,13 @@ const teamSteps: Step[] = [
     ),
   },
   {
-    do: [{ kind: 'remote-merge', branch: 'pie', deleteBranch: true }, 'git switch main', 'git pull', 'git fetch --prune', 'git branch -d pie'],
-    say: <>Your pull request is merged too. You clean up the same way: pull main, prune, delete the local branch.</>,
+    do: { kind: 'remote-merge', branch: 'pie', deleteBranch: true },
+    say: <>Your pull request is approved, and Sam merges it on the website.</>,
+  },
+  { do: ['git switch main', 'git pull'], say: <>You update your main. Now it has the pie.</> },
+  {
+    do: ['git fetch --prune', 'git branch -d pie'],
+    say: <>You clean up the same way as before: remove the old remote label, then delete the local branch.</>,
   },
 ]
 
@@ -378,12 +397,16 @@ const forceStart = built({ 'soup.txt': SOUP, 'bread.txt': BREAD }, [
 ])
 const forceSteps: Step[] = [
   {
-    do: [{ kind: 'teammate', path: 'bread.txt', content: SEEDS, message: 'Seeds on bread' }, 'git fetch'],
     say: (
       <>
-        Your <strong>pie</strong> branch is on the remote. Then Sam pushes a commit to main, and you fetch it.
+        Your <strong>pie</strong> branch has one commit, and you pushed it. The remote and your computer have the same
+        history.
       </>
     ),
+  },
+  {
+    do: [{ kind: 'teammate', path: 'bread.txt', content: SEEDS, message: 'Seeds on bread' }, 'git fetch'],
+    say: <>Sam pushes a commit to main, and you fetch it.</>,
   },
   {
     do: 'git rebase origin/main',

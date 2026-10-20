@@ -203,6 +203,14 @@ const reflogStart = built({ 'soup.txt': SOUP }, [
 const lostId = reflogStart.local.branches.experiment!
 const reflogSteps: Step[] = [
   {
+    say: (
+      <>
+        main has three commits. You also tried two ideas on an <strong>experiment</strong> branch, then switched back to
+        main.
+      </>
+    ),
+  },
+  {
     do: 'git reset --hard HEAD~2',
     say: <>You want to undo one commit, but you type <code>HEAD~2</code>. Two commits disappear from main.</>,
   },
@@ -281,13 +289,16 @@ const blameStart = built({ 'soup.txt': soup('- 2 leeks', '- 1 potato', '- 1 lite
 ])
 const blameSteps: Step[] = [
   {
-    do: 'git blame soup.txt',
     say: (
       <>
-        <code>git blame</code> shows, for each line, the last commit that changed it and who made it. The colored bar shows
-        the author.
+        You and Sam both changed <code>soup.txt</code> over time. The view below shows each line with the last commit that
+        changed it. The colored bar shows the author.
       </>
     ),
+  },
+  {
+    do: 'git blame soup.txt',
+    say: <><code>git blame</code> prints the same information in the terminal.</>,
   },
   {
     do: [write('soup.txt', soup('- 2 leeks', '- 1 potato', '- 1 clove garlic', '- 1 liter vegetable stock', '- 1 tsp salt')), 'git commit -am "Less salt again"', 'git blame soup.txt'],
