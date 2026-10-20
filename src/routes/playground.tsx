@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AreasDiagram } from '../components/AreasDiagram'
 import { LocalGraph, Panel, RemoteView } from '../components/GraphViews'
 import { OutputLines } from '../components/ScriptedDemo'
-import { emptyWorld, headId, run, status, treeOf, type Action, type World } from '../git/sim'
+import { currentBranch, emptyWorld, headId, run, status, treeOf, type Action, type World } from '../git/sim'
 import { BREAD, SOUP } from '../lessons/worlds'
 
 export const Route = createFileRoute('/playground')({
@@ -117,8 +117,11 @@ function suggestions(w: World): string[] {
   if (w.local.stash.length) out.push('git stash pop')
   if (s.staged.length) out.push('git commit -m "Describe your change"', 'git restore --staged .')
   if (headId(w)) {
-    out.push('git log', 'git branch', 'git switch -c idea', 'git reflog')
-    if (Object.keys(w.local.branches).length > 1) out.push('git switch main', 'git merge idea')
+    out.push('git log', 'git branch', 'git reflog')
+    if (!('idea' in w.local.branches)) out.push('git switch -c idea')
+    // Offer to switch to, and merge, a branch that really exists.
+    const other = Object.keys(w.local.branches).find((b) => b !== currentBranch(w))
+    if (other) out.push(`git switch ${other}`, `git merge ${other}`)
     if (w.local.origin) out.push('git push', 'git pull')
     else out.push('git remote add origin github.com/you/cookbook')
   }

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { laneOrder, localCommits, localRefs, remoteCommits, remoteRefs } from '../git/refs'
 import { headId, type World } from '../git/sim'
 import { CommitGraph } from './CommitGraph'
+import { Reserve } from './Reserve'
 
 export function Panel({ title, icon, children }: { title: string; icon?: ReactNode; children: ReactNode }) {
   return (
@@ -31,18 +32,40 @@ export function LocalGraph({ world }: { world: World }) {
 
 export type Flow = 'up' | 'down' | 'blocked' | null
 
-/** The remote on top, this computer below. Commits sit in the same column on both, so you can compare. */
-export function RemoteView({ world, flow }: { world: World; flow: Flow }) {
+// Both graphs of the remote view for one world. Commits share columns, so the two graphs line up.
+function remoteGraphs(world: World) {
   const local = localCommits(world)
   const remote = remoteCommits(world)
   const all = [...new Map([...local, ...remote].map((c) => [c.id, c])).values()].sort((a, b) => a.order - b.order)
   const column = new Map(all.map((c, i) => [c.id, i]))
   const columnOf = (id: string) => column.get(id) ?? 0
   const lanes = laneOrder(world)
+  return {
+    remote: <CommitGraph commits={remote} refs={remoteRefs(world)} lanes={lanes} columnOf={columnOf} empty="The remote is empty." />,
+    local: (
+      <CommitGraph
+        commits={local}
+        refs={localRefs(world)}
+        lanes={lanes}
+        columnOf={columnOf}
+        headId={headId(world)}
+        empty={world.initialized ? 'No commits yet.' : 'No copy on this computer yet.'}
+      />
+    ),
+  }
+}
+
+/**
+ * The remote on top, this computer below. Pass every world of a demo as `reserve` to keep each graph
+ * as tall as its tallest version, so the lower panel does not move when the upper graph grows.
+ */
+export function RemoteView({ world, flow, reserve = [] }: { world: World; flow: Flow; reserve?: World[] }) {
+  const live = remoteGraphs(world)
+  const sizers = reserve.map(remoteGraphs)
   return (
     <div className="flex flex-col gap-2">
       <Panel title={`Remote ${world.remote?.url ? `· ${world.remote.url}` : ''}`} icon={<CloudIcon />}>
-        <CommitGraph commits={remote} refs={remoteRefs(world)} lanes={lanes} columnOf={columnOf} empty="The remote is empty." />
+        <Reserve live={live.remote} all={sizers.map((g) => g.remote)} />
       </Panel>
       <div className="relative flex h-10 items-center justify-center">
         <AnimatePresence mode="wait">
@@ -69,14 +92,7 @@ export function RemoteView({ world, flow }: { world: World; flow: Flow }) {
         </AnimatePresence>
       </div>
       <Panel title="Your computer" icon={<LaptopIcon />}>
-        <CommitGraph
-          commits={local}
-          refs={localRefs(world)}
-          lanes={lanes}
-          columnOf={columnOf}
-          headId={headId(world)}
-          empty={world.initialized ? 'No commits yet.' : 'No copy on this computer yet.'}
-        />
+        <Reserve live={live.local} all={sizers.map((g) => g.local)} />
       </Panel>
     </div>
   )

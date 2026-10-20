@@ -5,6 +5,7 @@ import { AreasDiagram } from './AreasDiagram'
 import { DiffView, FilesView } from './FileViews'
 import { BisectView, BlameView } from './InspectViews'
 import { LocalGraph, Panel, RemoteView, type Flow } from './GraphViews'
+import { Reserve } from './Reserve'
 
 // `fails` marks a step whose command is meant to fail, such as a refused push. Tests check it.
 export type Step = { do?: Action | Action[]; say: ReactNode; fails?: boolean }
@@ -26,7 +27,21 @@ const viewTitle = (v: View) => (isBlame(v) ? 'Who changed each line' : titles[v]
 
 const asList = (a: Step['do']) => (a === undefined ? [] : Array.isArray(a) ? a : [a])
 
-/** Plays a lesson script one step at a time. Each step runs its actions on the world from the step before. */
+// Which way commits move in the remote view for one step.
+function flowOf(step: Step, result: Result): Flow {
+  const commands = asList(step.do).filter((a) => typeof a === 'string')
+  if (commands.some((a) => /git push/.test(a))) return result.ok ? 'up' : 'blocked'
+  if (commands.some((a) => /git (pull|fetch|clone)/.test(a))) return 'down'
+  return null
+}
+
+const captionClass =
+  'text-[15px] leading-relaxed text-ink-2 [&_strong]:text-ink [&_code]:rounded [&_code]:bg-grid [&_code]:px-1 [&_code]:text-ink'
+
+/**
+ * Plays a lesson script one step at a time. Each step runs its actions on the world from the step before.
+ * The buttons sit at the top and every block reserves its tallest height, so nothing moves under the mouse.
+ */
 export function ScriptedDemo({ start, steps, views }: { start: World; steps: Step[]; views: View[] }) {
   const [i, setI] = useState(0)
   const results = useMemo(() => {
@@ -39,73 +54,76 @@ export function ScriptedDemo({ start, steps, views }: { start: World; steps: Ste
   }, [start, steps])
   const step = steps[i]!
   const result = results[i]!
-  const actions = asList(step.do)
-  const flow: Flow = actions.some((a) => typeof a === 'string' && /git push/.test(a))
-    ? result.ok
-      ? 'up'
-      : 'blocked'
-    : actions.some((a) => typeof a === 'string' && /git (pull|fetch|clone)/.test(a))
-      ? 'down'
-      : null
 
   return (
     <section className="my-8 rounded-2xl border border-line bg-page p-3 sm:p-4" aria-label="Interactive demo">
-      <div className="mb-3 flex items-center gap-3">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-grid">
+      {/* Sticks below the site header, so the buttons stay in reach in tall demos. */}
+      <div className="sticky top-[57px] z-10 -mx-3 mb-3 flex flex-wrap items-center gap-2 bg-page px-3 py-2 sm:-mx-4 sm:px-4">
+        <div className="h-1.5 min-w-24 flex-1 overflow-hidden rounded-full bg-grid">
           <motion.div className="h-full bg-accent" animate={{ width: `${((i + 1) / steps.length) * 100}%` }} />
         </div>
-        <span className="text-xs text-muted tabular-nums">
+        <span className="w-20 text-right text-xs text-muted tabular-nums">
           Step {i + 1} of {steps.length}
         </span>
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-[15px] leading-relaxed text-ink-2 [&_strong]:text-ink [&_code]:rounded [&_code]:bg-grid [&_code]:px-1 [&_code]:text-ink"
-        >
-          {step.say}
-        </motion.div>
-        <ActionLog actions={actions} result={result} />
-      </div>
-
-      <div className="mt-4 flex flex-col gap-3">
-        {views.map((v) =>
-          v === 'remote' ? (
-            <RemoteView key={v} world={result.world} flow={flow} />
-          ) : (
-            <Panel key={v} title={viewTitle(v)}>
-              <ViewBody view={v} world={result.world} />
-            </Panel>
-          ),
-        )}
-      </div>
-
-      <div className="mt-4 flex items-center gap-2">
         <button
           onClick={() => setI(0)}
           disabled={i === 0}
-          className="rounded-lg px-3 py-2 text-sm text-ink-2 hover:bg-grid disabled:opacity-40"
+          className="rounded-lg px-2.5 py-1.5 text-sm text-ink-2 hover:bg-grid disabled:opacity-40"
         >
           Start over
         </button>
-        <div className="flex-1" />
         <button
           onClick={() => setI(i - 1)}
           disabled={i === 0}
-          className="rounded-lg border border-line bg-surface px-4 py-2 text-sm font-medium hover:bg-grid disabled:opacity-40"
+          className="rounded-lg border border-line bg-surface px-3.5 py-1.5 text-sm font-medium hover:bg-grid disabled:opacity-40"
         >
           Back
         </button>
         <button
           onClick={() => setI(i + 1)}
           disabled={i === steps.length - 1}
-          className="rounded-lg bg-accent px-5 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
+          className="w-20 rounded-lg bg-accent py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
         >
           {i === steps.length - 1 ? 'Done' : 'Next'}
         </button>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <Reserve
+          all={steps.map((s, k) => (
+            <div key={k} className={captionClass}>
+              {s.say}
+            </div>
+          ))}
+          live={
+            <motion.div key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className={captionClass}>
+              {step.say}
+            </motion.div>
+          }
+        />
+        <Reserve
+          all={steps.map((s, k) => (
+            <ActionLog key={k} actions={asList(s.do)} result={results[k]!} />
+          ))}
+          live={<ActionLog actions={asList(step.do)} result={result} />}
+        />
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3">
+        {views.map((v) =>
+          v === 'remote' ? (
+            <RemoteView key={v} world={result.world} flow={flowOf(step, result)} reserve={results.map((r) => r.world)} />
+          ) : (
+            <Panel key={v} title={viewTitle(v)}>
+              <Reserve
+                all={results.map((r, k) => (
+                  <ViewBody key={k} view={v} world={r.world} />
+                ))}
+                live={<ViewBody view={v} world={result.world} />}
+              />
+            </Panel>
+          ),
+        )}
       </div>
     </section>
   )
@@ -122,10 +140,10 @@ function ViewBody({ view, world }: { view: View; world: World }) {
 
 function ActionLog({ actions, result }: { actions: Action[]; result: Result }) {
   if (!actions.length) {
-    return <div className="hidden rounded-xl bg-[#141413] p-3 font-mono text-sm text-[#898781] md:block">$ _</div>
+    return <div className="hidden h-full rounded-xl bg-[#141413] p-3 font-mono text-sm text-[#898781] md:block">$ _</div>
   }
   return (
-    <div className="rounded-xl bg-[#141413] p-3 font-mono text-[13px] leading-6 text-[#f0efec]">
+    <div className="h-full rounded-xl bg-[#141413] p-3 font-mono text-[13px] leading-6 text-[#f0efec]">
       {actions.map((a, k) => (
         <div key={k}>{describe(a)}</div>
       ))}

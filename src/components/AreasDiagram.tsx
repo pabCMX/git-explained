@@ -26,7 +26,7 @@ export function AreasDiagram({ world }: { world: World }) {
 
   return (
     <LayoutGroup id={scope}>
-      <div className={`grid gap-3 ${world.local.stash.length ? 'md:grid-cols-2 xl:grid-cols-4' : 'md:grid-cols-3'}`}>
+      <div className={`grid gap-3 ${world.local.stash.length ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
         <Area title="Your folder" hint="The files you see and edit.">
           {paths.map((p) => {
             const change = folderChange(p)

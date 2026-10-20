@@ -1,10 +1,10 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { assignLanes, type Ref } from '../git/refs'
 import { compare, type Commit } from '../git/sim'
 
 const DX = 96
-const PAD = 60
 const R = 12
 const LABEL_H = 20
 const LABEL_GAP = 4
@@ -29,7 +29,7 @@ type Props = {
 
 /** Animated commit graph. Each row is a branch lane, each column is one commit in time order. */
 export function CommitGraph({ commits, refs, lanes, columnOf, headId, empty = 'No commits yet.' }: Props) {
-  const [hover, setHover] = useState<string | null>(null)
+  const [hover, setHover] = useState<{ id: string; rect: DOMRect } | null>(null)
   const scroller = useRef<HTMLDivElement>(null)
   const col = (id: string) => (columnOf ? columnOf(id) : commits.findIndex((c) => c.id === id))
   const byId = new Map(commits.map((c) => [c.id, c]))
@@ -51,6 +51,8 @@ export function CommitGraph({ commits, refs, lanes, columnOf, headId, empty = 'N
     laneY.set(l, y)
     top = y + R + 30
   }
+  // Wide enough on the left for the widest label on the first commit.
+  const PAD = Math.max(60, ...refs.map((r) => labelWidth(r) / 2 + 8))
   const maxCol = Math.max(0, ...commits.map((c) => col(c.id)))
   const width = PAD * 2 + DX * maxCol + 40
   const height = Math.max(top, 70)
@@ -61,12 +63,20 @@ export function CommitGraph({ commits, refs, lanes, columnOf, headId, empty = 'N
     el?.scrollTo({ left: el.scrollWidth, behavior: 'smooth' })
   }, [commits.length])
 
+  // A fixed tooltip would stay behind when the page scrolls, so scrolling hides it.
+  useEffect(() => {
+    if (!hover) return
+    const hide = () => setHover(null)
+    window.addEventListener('scroll', hide, { capture: true, once: true })
+    return () => window.removeEventListener('scroll', hide, { capture: true })
+  }, [hover])
+
   if (!commits.length) {
     return <div className="flex h-24 items-center justify-center text-sm text-muted">{empty}</div>
   }
 
   const head = headId ? byId.get(headId) : undefined
-  const hovered = hover ? byId.get(hover) : undefined
+  const hovered = hover ? byId.get(hover.id) : undefined
 
   return (
     <div ref={scroller} className="overflow-x-auto">
@@ -129,7 +139,7 @@ export function CommitGraph({ commits, refs, lanes, columnOf, headId, empty = 'N
                   animate={{ x, y, scale: 1, opacity: 1 }}
                   exit={{ scale: 0.3, opacity: 0, transition: { duration: 0.5 } }}
                   transition={spring}
-                  onMouseEnter={() => setHover(c.id)}
+                  onMouseEnter={(e) => setHover({ id: c.id, rect: e.currentTarget.querySelectorAll('circle')[1]!.getBoundingClientRect() })}
                   onMouseLeave={() => setHover(null)}
                   className="cursor-default"
                 >
@@ -149,8 +159,8 @@ export function CommitGraph({ commits, refs, lanes, columnOf, headId, empty = 'N
               const c = byId.get(id)!
               const { x, y } = pos(c)
               return list.map((r, k) => {
-                const text = r.current ? `HEAD → ${r.name}` : r.name
-                const w = text.length * 6.7 + 16
+                const text = labelText(r)
+                const w = labelWidth(r)
                 const ly = y - R - 8 - LABEL_H - k * (LABEL_H + LABEL_GAP)
                 const labelColor = laneColor(lanes, colorKey(r.name))
                 return (
@@ -188,7 +198,9 @@ export function CommitGraph({ commits, refs, lanes, columnOf, headId, empty = 'N
           </AnimatePresence>
         </svg>
 
-        {hovered && <CommitTooltip commit={hovered} parent={hovered.parents[0] ? byId.get(hovered.parents[0]) : undefined} at={pos(hovered)} />}
+        {hovered && hover && (
+          <CommitTooltip key={hovered.id} commit={hovered} parent={hovered.parents[0] ? byId.get(hovered.parents[0]) : undefined} anchor={hover.rect} />
+        )}
       </div>
     </div>
   )
@@ -200,12 +212,32 @@ const order = (lanes: string[], l: string) => {
   return (i < 0 ? lanes.length : i) * 3 + (l.startsWith('origin/') ? 1 : l.endsWith('(merged)') ? 2 : 0)
 }
 
-function CommitTooltip({ commit, parent, at }: { commit: Commit; parent?: Commit; at: { x: number; y: number } }) {
+const labelText = (r: Ref) => (r.current ? `HEAD → ${r.name}` : r.name)
+const labelWidth = (r: Ref) => labelText(r).length * 6.7 + 16
+
+/**
+ * Commit details next to the hovered dot. It renders in document.body with fixed position, so the
+ * scrolling graph box cannot cut it off. It moves to the left side or up when it would leave the screen.
+ */
+function CommitTooltip({ commit, parent, anchor }: { commit: Commit; parent?: Commit; anchor: DOMRect }) {
   const changes = compare(parent?.tree ?? {}, commit.tree)
-  return (
+  const ref = useRef<HTMLDivElement>(null)
+  const [at, setAt] = useState<{ left: number; top: number } | null>(null)
+  useLayoutEffect(() => {
+    const el = ref.current!
+    const gap = 10
+    const right = anchor.right + gap
+    const left = right + el.offsetWidth > window.innerWidth - gap ? anchor.left - el.offsetWidth - gap : right
+    // Labels sit above the dot, so the tooltip starts at the dot and grows down.
+    const top = anchor.top
+    setAt({ left: Math.max(gap, left), top: Math.min(Math.max(gap, top), window.innerHeight - el.offsetHeight - gap) })
+  }, [anchor])
+  return createPortal(
     <div
-      className="pointer-events-none absolute z-10 w-56 rounded-lg border border-line bg-surface p-3 text-xs shadow-lg"
-      style={{ left: at.x + 22, top: Math.max(0, at.y - 30) }}
+      ref={ref}
+      role="tooltip"
+      className="pointer-events-none fixed z-50 w-56 rounded-lg border border-line bg-surface p-3 text-xs shadow-lg"
+      style={{ left: at?.left ?? 0, top: at?.top ?? 0, visibility: at ? 'visible' : 'hidden' }}
     >
       <div className="font-mono text-muted">{commit.id}</div>
       <div className="mt-1 font-medium text-ink">{commit.message}</div>
@@ -219,6 +251,7 @@ function CommitTooltip({ commit, parent, at }: { commit: Commit; parent?: Commit
             <span className="font-mono">{c.path}</span> <span className="text-muted">({c.kind})</span>
           </div>
         ))}
-    </div>
+    </div>,
+    document.body,
   )
 }

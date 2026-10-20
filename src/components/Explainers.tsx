@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState } from 'react'
+import { Reserve } from './Reserve'
 
 const DAYS = [
   { file: 'soup.docx', msg: 'First draft' },
@@ -13,76 +14,76 @@ const DAYS = [
 /** Lesson 1: saving copies by hand next to saving versions with Git, day by day. */
 export function VersionChaos() {
   const [day, setDay] = useState(1)
-  const shown = DAYS.slice(0, day)
   return (
     <section className="my-8 rounded-2xl border border-line bg-page p-3 sm:p-4" aria-label="Copies compared to Git">
-      <div className="grid gap-3 md:grid-cols-2">
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-3 text-xs font-semibold tracking-wide text-muted uppercase">Without Git</div>
-          <div className="flex flex-col gap-1.5">
-            <AnimatePresence initial={false}>
-              {shown.map((d, i) => (
-                <motion.div
-                  key={d.file}
-                  initial={{ opacity: 0, x: -12, rotate: -2 }}
-                  animate={{ opacity: 1, x: 0, rotate: i % 2 ? 0.6 : -0.6 }}
-                  className="flex items-center gap-2 rounded-md bg-page px-2.5 py-1.5 font-mono text-sm"
-                >
-                  <FileIcon />
-                  {d.file}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-          {day >= 4 && (
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3 text-sm text-ink-2">
-              Which file is the newest? What changed in <code className="font-mono">final_v2</code>? Nobody knows.
-            </motion.p>
-          )}
-        </div>
-
-        <div className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-3 text-xs font-semibold tracking-wide text-muted uppercase">With Git</div>
-          <div className="flex items-center gap-2 rounded-md bg-page px-2.5 py-1.5 font-mono text-sm">
-            <FileIcon />
-            soup.txt
-          </div>
-          <div className="mt-4 text-xs text-muted">History, saved in a hidden .git folder:</div>
-          <div className="relative mt-2 ml-2 border-l-2 border-[var(--lane-0)] pl-4">
-            <AnimatePresence initial={false}>
-              {shown.map((d) => (
-                <motion.div
-                  key={d.msg}
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="relative py-1 text-sm"
-                >
-                  <span className="absolute top-2.5 -left-[23px] size-3 rounded-full border-2 border-surface bg-[var(--lane-0)]" />
-                  {d.msg}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-3 rounded-xl border border-line bg-surface p-4">
-        <FileCountChart day={day} />
-      </div>
-
-      <div className="mt-4 flex items-center justify-end gap-2">
-        <button onClick={() => setDay(1)} disabled={day === 1} className="rounded-lg px-3 py-2 text-sm text-ink-2 hover:bg-grid disabled:opacity-40">
+      <div className="mb-3 flex items-center justify-end gap-2">
+        <button onClick={() => setDay(1)} disabled={day === 1} className="rounded-lg px-3 py-1.5 text-sm text-ink-2 hover:bg-grid disabled:opacity-40">
           Start over
         </button>
         <button
           onClick={() => setDay(day + 1)}
           disabled={day === DAYS.length}
-          className="rounded-lg bg-accent px-5 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
+          className="w-36 rounded-lg bg-accent py-1.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40"
         >
           Next day ({day}/{DAYS.length})
         </button>
       </div>
+      <Reserve all={[<ChaosColumns key="last" day={DAYS.length} />]} live={<ChaosColumns day={day} />} />
+      <div className="mt-3 rounded-xl border border-line bg-surface p-4">
+        <FileCountChart day={day} />
+      </div>
     </section>
+  )
+}
+
+// The folder of copies next to the single file with its history, after `day` days.
+function ChaosColumns({ day }: { day: number }) {
+  const shown = DAYS.slice(0, day)
+  return (
+    <div className="grid h-full gap-3 md:grid-cols-2">
+      <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="mb-3 text-xs font-semibold tracking-wide text-muted uppercase">Without Git</div>
+        <div className="flex flex-col gap-1.5">
+          <AnimatePresence initial={false}>
+            {shown.map((d, i) => (
+              <motion.div
+                key={d.file}
+                initial={{ opacity: 0, x: -12, rotate: -2 }}
+                animate={{ opacity: 1, x: 0, rotate: i % 2 ? 0.6 : -0.6 }}
+                className="flex items-center gap-2 rounded-md bg-page px-2.5 py-1.5 font-mono text-sm"
+              >
+                <FileIcon />
+                <span className="truncate">{d.file}</span>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+        {day >= 4 && (
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3 text-sm text-ink-2">
+            Which file is the newest? What changed in <code className="font-mono">final_v2</code>? Nobody knows.
+          </motion.p>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-line bg-surface p-4">
+        <div className="mb-3 text-xs font-semibold tracking-wide text-muted uppercase">With Git</div>
+        <div className="flex items-center gap-2 rounded-md bg-page px-2.5 py-1.5 font-mono text-sm">
+          <FileIcon />
+          soup.txt
+        </div>
+        <div className="mt-4 text-xs text-muted">History, saved in a hidden .git folder:</div>
+        <div className="relative mt-2 ml-2 border-l-2 border-[var(--lane-0)] pl-4">
+          <AnimatePresence initial={false}>
+            {shown.map((d) => (
+              <motion.div key={d.msg} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="relative py-1 text-sm">
+                <span className="absolute top-2.5 -left-[23px] size-3 rounded-full border-2 border-surface bg-[var(--lane-0)]" />
+                {d.msg}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
   )
 }
 
