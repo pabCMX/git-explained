@@ -542,7 +542,7 @@ const COMMANDS: Record<string, Command> = {
       ...patchLocal(w, { tracking: { ...w.local.tracking, [`origin/${branch}`]: mine } }),
       remote: { ...w.remote, branches: { ...w.remote.branches, [branch]: mine } },
     }
-    return ok(next, [`To ${w.remote.url}`, `   ${theirs ?? '(new branch)'}..${mine}  ${branch} -> ${branch}`])
+    return ok(next, [`To ${w.remote.url}`, theirs ? `   ${theirs}..${mine}  ${branch} -> ${branch}` : ` * [new branch]  ${branch} -> ${branch}`])
   },
 
   fetch: (w) => fetch(w),

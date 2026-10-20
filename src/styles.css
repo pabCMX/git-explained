@@ -1,0 +1,112 @@
+@import 'tailwindcss';
+
+/* Colors come from the validated data-viz palette. Lanes use the categorical slots in fixed order. */
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+  --lane-0: #2a78d6;
+  --lane-1: #eb6834;
+  --lane-2: #1baf7a;
+  --lane-3: #eda100;
+  --lane-4: #e87ba4;
+  --lane-5: #008300;
+  --good: #0ca30c;
+  --good-ink: #006300;
+  --warn: #fab219;
+  --bad: #d03b3b;
+  --accent: #2a78d6;
+  --accent-soft: #cde2fb;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #f0efec;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --lane-0: #3987e5;
+    --lane-1: #d95926;
+    --lane-2: #199e70;
+    --lane-3: #c98500;
+    --lane-4: #d55181;
+    --lane-5: #008300;
+    --good-ink: #0ca30c;
+    --accent: #3987e5;
+    --accent-soft: #184f95;
+  }
+}
+
+@theme inline {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-grid: var(--grid);
+  --color-axis: var(--axis);
+  --color-line: var(--border);
+  --color-good: var(--good);
+  --color-good-ink: var(--good-ink);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', Menlo, monospace;
+}
+
+body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.prose-lesson p {
+  margin: 0.75rem 0;
+  line-height: 1.65;
+  color: var(--ink-2);
+  max-width: 68ch;
+}
+.prose-lesson h2 {
+  margin: 2.5rem 0 0.5rem;
+  font-size: 1.35rem;
+  font-weight: 650;
+}
+.prose-lesson strong {
+  color: var(--ink);
+}
+.prose-lesson ul {
+  margin: 0.75rem 0;
+  padding-left: 1.25rem;
+  list-style: disc;
+  color: var(--ink-2);
+  max-width: 68ch;
+}
+.prose-lesson li {
+  margin: 0.3rem 0;
+  line-height: 1.6;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+.prose-lesson :not(pre) > code {
+  background: var(--grid);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  color: var(--ink);
+}
