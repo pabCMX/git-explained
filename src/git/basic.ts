@@ -26,6 +26,7 @@ import {
   treeOf,
   type Change,
   type Result,
+  untrackedInTheWay,
   type World,
 } from './core'
 
@@ -237,7 +238,8 @@ export const BASIC: Record<string, Command> = {
     const staged = args.includes('--staged')
     let paths = names(args)
     if (!paths.length) return fail(w, 'Tell Git which file: git restore <file>')
-    if (paths.includes('.')) paths = [...new Set([...Object.keys(w.local.working), ...Object.keys(w.local.index)])]
+    // HEAD's paths are included, so a staged deletion can be unstaged too.
+    if (paths.includes('.')) paths = [...new Set([...Object.keys(w.local.working), ...Object.keys(w.local.index), ...Object.keys(headTree(w))])]
     if (staged) return ok(unstage(w, paths))
     const working = { ...w.local.working }
     for (const p of paths) {
@@ -380,6 +382,8 @@ export function merge(w: World, target: string, name: string, opts: MergeOptions
   const result = canFastForward
     ? { tree: treeOf(w, target), conflicts: [] }
     : threeWay(treeOf(w, mergeBase(w, cur, target)), treeOf(w, cur), treeOf(w, target), name)
+  const inTheWay = untrackedInTheWay(w, result.tree)
+  if (inTheWay.length) return fail(w, ...blockedMessage(inTheWay))
   const out = result.conflicts.flatMap((p) => [`Auto-merging ${p}`, `CONFLICT (content): Merge conflict in ${p}`])
 
   if (opts.squash) {

@@ -102,10 +102,9 @@ function stashApply(w: World, entry: StashEntry): Result {
     const r = threeWay(one(p, baseTree[p]), one(p, working[p]), one(p, f.content ?? undefined), 'stash')
     if (r.conflicts.length) return fail(w, `CONFLICT (content): Merge conflict in ${p}`, STOPPED)
     const content = r.tree[p]
-    if (content === undefined) {
-      delete working[p]
-      delete index[p]
-    } else {
+    // Like "git stash pop" without --index: a deletion comes back as an unstaged deletion.
+    if (content === undefined) delete working[p]
+    else {
       working[p] = content
       // A new file that was tracked before the stash is tracked again.
       if (!(p in index)) index[p] = content

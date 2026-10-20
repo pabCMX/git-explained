@@ -241,7 +241,7 @@ export function moveTo(w: World, head: Head, tree: Files): World | string[] {
   const s = status(w)
   const cur = headTree(w)
   const dirty = [...new Set([...s.staged, ...s.unstaged].map((c) => c.path))]
-  const blocked = dirty.filter((p) => cur[p] !== tree[p])
+  const blocked = [...dirty.filter((p) => cur[p] !== tree[p]), ...untrackedInTheWay(w, tree)]
   if (blocked.length) return blocked
   const moved = checkoutTree(patchLocal(w, { head }), tree)
   const working = { ...moved.local.working }
@@ -257,8 +257,13 @@ export function moveTo(w: World, head: Head, tree: Files): World | string[] {
   return patchLocal(moved, { working, index })
 }
 
+/** Untracked files in the folder that a new snapshot would overwrite. Git refuses to do that. */
+export function untrackedInTheWay(w: World, tree: Files): string[] {
+  return Object.keys(w.local.working).filter((p) => !(p in w.local.index) && p in tree && tree[p] !== w.local.working[p])
+}
+
 export const blockedMessage = (paths: string[]) => [
-  'error: Your local changes to these files would be overwritten:',
+  'error: These files have changes that would be overwritten:',
   ...paths.map((p) => `  ${p}`),
   'Commit them or stash them first.',
 ]

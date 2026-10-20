@@ -8,8 +8,13 @@ A TanStack Start app that teaches Git to people who do not program. Nine basic l
 pnpm install
 pnpm dev        # http://localhost:3417
 pnpm test       # simulator tests
-pnpm build
+pnpm build      # static site in dist/client
+pnpm preview    # serve the build locally
 ```
+
+## Host it
+
+`pnpm build` prerenders every page to static HTML in `dist/client`. Any static host works, for example Netlify, Vercel or Cloudflare Pages: build command `pnpm build`, output folder `dist/client`. The site expects to be served from the root of a domain, not from a subpath.
 
 ## How it works
 

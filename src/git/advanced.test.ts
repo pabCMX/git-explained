@@ -15,6 +15,12 @@ describe('advanced commands', () => {
     expect(r.world.local.stash).toHaveLength(0)
   })
 
+  it('stash pop brings back a deletion as unstaged', () => {
+    const r = runAll(start(), [{ kind: 'delete', path: 'bread.txt' }, 'git stash', 'git stash pop'])
+    expect(status(r.world).staged).toEqual([])
+    expect(status(r.world).unstaged).toEqual([{ path: 'bread.txt', kind: 'deleted' }])
+  })
+
   it('rebase replays branch commits on top of main as new commits', () => {
     const r = runAll(start(), [
       'git switch -c idea',

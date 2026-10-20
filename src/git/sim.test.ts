@@ -61,6 +61,26 @@ describe('sim', () => {
     expect(r.world.local.working['soup.txt']).toBe('cold water\nsalt\nend\nserve\n')
   })
 
+  it('refuses to switch when it would overwrite an untracked file', () => {
+    const r = runAll(start().world, [
+      'git switch -c idea',
+      { kind: 'write', path: 'pie.txt', content: 'apples\n' },
+      'git add pie.txt',
+      'git commit -m "Pie"',
+      'git switch main',
+      { kind: 'write', path: 'pie.txt', content: 'pears\n' },
+      'git switch idea',
+    ])
+    expect(r.ok).toBe(false)
+    expect(r.world.local.working['pie.txt']).toBe('pears\n')
+  })
+
+  it('restore --staged . unstages a deletion', () => {
+    const r = runAll(start().world, [{ kind: 'delete', path: 'soup.txt' }, 'git add .', 'git restore --staged .'])
+    expect(status(r.world).staged).toEqual([])
+    expect(status(r.world).unstaged).toEqual([{ path: 'soup.txt', kind: 'deleted' }])
+  })
+
   it('rejects a push when the remote has new commits', () => {
     let r = runAll(start().world, ['git remote add origin https://example.com/soup.git', 'git push'])
     r = runAll(r.world, [

@@ -350,7 +350,7 @@ const bisectSteps: Step[] = [
     say: (
       <>
         Fine again. Now Git knows the answer: "Sort the list". When someone sorted the ingredients, they also changed tsp to
-        tbsp by mistake.
+        tbsp by mistake. Git does not check out that commit. Your folder still has the last version you tested.
       </>
     ),
   },
