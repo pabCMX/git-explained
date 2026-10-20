@@ -257,9 +257,9 @@ export function moveTo(w: World, head: Head, tree: Files): World | string[] {
   return patchLocal(moved, { working, index })
 }
 
-/** Untracked files in the folder that a new snapshot would overwrite. Git refuses to do that. */
+/** Untracked files in the folder that a new snapshot would replace. Git refuses, also when the content is the same. */
 export function untrackedInTheWay(w: World, tree: Files): string[] {
-  return Object.keys(w.local.working).filter((p) => !(p in w.local.index) && p in tree && tree[p] !== w.local.working[p])
+  return Object.keys(w.local.working).filter((p) => !(p in w.local.index) && p in tree)
 }
 
 export const blockedMessage = (paths: string[]) => [

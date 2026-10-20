@@ -73,6 +73,10 @@ describe('sim', () => {
     ])
     expect(r.ok).toBe(false)
     expect(r.world.local.working['pie.txt']).toBe('pears\n')
+    // Real Git refuses even when the untracked file has the same content.
+    const same = runAll(r.world, [{ kind: 'write', path: 'pie.txt', content: 'apples\n' }])
+    expect(runAll(same.world, ['git switch idea']).ok).toBe(false)
+    expect(runAll(same.world, ['git merge idea']).ok).toBe(false)
   })
 
   it('restore --staged . unstages a deletion', () => {
