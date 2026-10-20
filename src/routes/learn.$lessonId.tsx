@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from '@tanstack/react-router'
-import { lessons } from '../lessons/registry'
+import { lessons, lessonsIn, parts } from '../lessons/registry'
 
 export const Route = createFileRoute('/learn/$lessonId')({
   loader: ({ params }) => {
@@ -18,30 +18,37 @@ function LessonPage() {
   const lesson = lessons[index]!
   const prev = lessons[index - 1]
   const next = lessons[index + 1]
+  const part = parts.find((p) => p.id === lesson.part)!
+  const inPart = lessonsIn(lesson.part)
 
   return (
     <div className="mx-auto flex max-w-6xl gap-10 px-4 pb-24">
-      <aside className="sticky top-16 hidden h-fit w-56 shrink-0 py-10 lg:block">
-        <ol className="flex flex-col gap-0.5">
-          {lessons.map((l, i) => (
-            <li key={l.id}>
-              <Link
-                to="/learn/$lessonId"
-                params={{ lessonId: l.id }}
-                className="flex gap-2 rounded-md px-2 py-1.5 text-sm text-ink-2 hover:bg-grid"
-                activeProps={{ className: 'bg-grid font-medium text-ink' }}
-              >
-                <span className="w-4 text-right text-muted tabular-nums">{i + 1}</span>
-                {l.title}
-              </Link>
-            </li>
-          ))}
-        </ol>
+      <aside className="sticky top-16 hidden h-fit max-h-[calc(100vh-5rem)] w-60 shrink-0 overflow-y-auto py-10 lg:block">
+        {parts.map((part) => (
+          <div key={part.id} className="mb-6">
+            <div className="mb-1 px-2 text-xs font-semibold tracking-wide text-muted uppercase">{part.title}</div>
+            <ol className="flex flex-col gap-0.5">
+              {lessonsIn(part.id).map((l) => (
+                <li key={l.id}>
+                  <Link
+                    to="/learn/$lessonId"
+                    params={{ lessonId: l.id }}
+                    className="flex gap-2 rounded-md px-2 py-1.5 text-sm text-ink-2 hover:bg-grid"
+                    activeProps={{ className: 'bg-grid font-medium text-ink' }}
+                  >
+                    <span className="w-4 shrink-0 text-right text-muted tabular-nums">{l.n}</span>
+                    {l.title}
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </div>
+        ))}
       </aside>
 
       <main className="min-w-0 flex-1 py-10">
         <div className="text-sm text-muted">
-          Lesson {index + 1} of {lessons.length}
+          {part.title} · lesson {inPart.findIndex((l) => l.id === lesson.id) + 1} of {inPart.length}
         </div>
         <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">{lesson.title}</h1>
         <article className="prose-lesson mt-4">

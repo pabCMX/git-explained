@@ -38,11 +38,27 @@ describe('sim', () => {
       'git merge spicy',
     ])
     expect(r.ok).toBe(false)
-    expect(r.world.local.working['soup.txt']).toBe('water\n<<<<<<< HEAD\npepper\n=======\nchili\n>>>>>>> spicy')
+    expect(r.world.local.working['soup.txt']).toBe('water\n<<<<<<< HEAD\npepper\n=======\nchili\n>>>>>>> spicy\n')
     expect(runAll(r.world, ['git commit -m "Merge"']).ok).toBe(false)
     r = runAll(r.world, [{ kind: 'write', path: 'soup.txt', content: 'water\npepper\nchili\n' }, 'git add soup.txt', 'git commit'])
     expect(r.ok).toBe(true)
     expect(r.world.commits[headId(r.world)!]!.parents).toHaveLength(2)
+  })
+
+  it('merges changes to different lines of the same file', () => {
+    const r = runAll(start().world, [
+      { kind: 'write', path: 'soup.txt', content: 'water\nsalt\nend\n' },
+      'git commit -am "Base"',
+      'git switch -c top',
+      { kind: 'write', path: 'soup.txt', content: 'cold water\nsalt\nend\n' },
+      'git commit -am "Top"',
+      'git switch main',
+      { kind: 'write', path: 'soup.txt', content: 'water\nsalt\nend\nserve\n' },
+      'git commit -am "Bottom"',
+      'git merge top',
+    ])
+    expect(r.ok).toBe(true)
+    expect(r.world.local.working['soup.txt']).toBe('cold water\nsalt\nend\nserve\n')
   })
 
   it('rejects a push when the remote has new commits', () => {

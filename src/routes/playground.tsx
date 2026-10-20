@@ -113,9 +113,11 @@ function suggestions(w: World): string[] {
   const out = ['git status']
   if (w.local.merging) return [...out, 'git add .', 'git commit', 'git merge --abort']
   if (s.unstaged.length || s.untracked.length) out.push('git add .', 'git diff')
+  if (headId(w) && (s.unstaged.length || s.staged.length)) out.push('git stash')
+  if (w.local.stash.length) out.push('git stash pop')
   if (s.staged.length) out.push('git commit -m "Describe your change"', 'git restore --staged .')
   if (headId(w)) {
-    out.push('git log', 'git branch', 'git switch -c idea')
+    out.push('git log', 'git branch', 'git switch -c idea', 'git reflog')
     if (Object.keys(w.local.branches).length > 1) out.push('git switch main', 'git merge idea')
     if (w.local.origin) out.push('git push', 'git pull')
     else out.push('git remote add origin github.com/you/cookbook')

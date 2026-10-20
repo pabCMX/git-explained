@@ -6,7 +6,7 @@ const kindLabel = { new: 'new', modified: 'changed', deleted: 'deleted' }
 const kindColor = { new: 'var(--good)', modified: 'var(--warn)', deleted: 'var(--bad)' }
 
 /**
- * Shows the folder, the staging area and the repository side by side.
+ * Shows the folder, the staging area and the repository side by side, plus the stash when it is not empty.
  * A change chip keeps the same layoutId while its content is the same, so it flies between columns.
  */
 export function AreasDiagram({ world }: { world: World }) {
@@ -26,7 +26,7 @@ export function AreasDiagram({ world }: { world: World }) {
 
   return (
     <LayoutGroup id={scope}>
-      <div className="grid gap-3 md:grid-cols-3">
+      <div className={`grid gap-3 ${world.local.stash.length ? 'md:grid-cols-2 xl:grid-cols-4' : 'md:grid-cols-3'}`}>
         <Area title="Your folder" hint="The files you see and edit.">
           {paths.map((p) => {
             const change = folderChange(p)
@@ -94,6 +94,29 @@ export function AreasDiagram({ world }: { world: World }) {
             })}
           </AnimatePresence>
         </Area>
+
+        {world.local.stash.length > 0 && (
+          <Area title="Stash" hint="Changes put aside. Newest first.">
+            {world.local.stash.map((entry, i) => (
+              <motion.div key={entry.message + world.local.stash.length} layout className="rounded-md border border-dashed border-axis bg-page px-2.5 py-2">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="text-xs">{entry.message}</span>
+                  <span className="font-mono text-xs text-muted">stash@{`{${i}}`}</span>
+                </div>
+                {i === 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {Object.entries(entry.files).map(([p, f]) => (
+                      <span key={p} className="flex items-center gap-1 text-xs text-ink-2">
+                        <Chip layoutId={chipId(p, f.content ?? undefined)} kind={f.content === null ? 'deleted' : f.untracked ? 'new' : 'modified'} />
+                        <span className="font-mono">{p}</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            ))}
+          </Area>
+        )}
       </div>
     </LayoutGroup>
   )

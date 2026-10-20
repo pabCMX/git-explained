@@ -1,4 +1,4 @@
-import { ScriptedDemo, type Step } from '../components/ScriptedDemo'
+import { ScriptedDemo, type Script, type Step } from '../components/ScriptedDemo'
 import { BREAD, built, recipe, SOUP } from './worlds'
 
 const spicy = (...extra: string[]) => recipe('Leek soup', '- 2 leeks', '- 1 potato', '- 1 liter water', '- 1 tsp salt', ...extra)
@@ -168,6 +168,7 @@ const conflictSteps: Step[] = [
   },
   {
     do: 'git merge less-salt',
+    fails: true,
     say: (
       <>
         Git stops and asks you. This is a <strong>merge conflict</strong>. It is normal, and nothing is broken. Git writes
@@ -221,3 +222,9 @@ export function MergingLesson() {
     </>
   )
 }
+
+export const scripts: Script[] = [
+  { start: branchStart, steps: branchSteps },
+  { start: mergeStart, steps: mergeSteps },
+  { start: conflictStart, steps: conflictSteps },
+]

@@ -3,18 +3,26 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { runAll, type Action, type Result, type World } from '../git/sim'
 import { AreasDiagram } from './AreasDiagram'
 import { DiffView, FilesView } from './FileViews'
+import { BisectView, BlameView } from './InspectViews'
 import { LocalGraph, Panel, RemoteView, type Flow } from './GraphViews'
 
-export type Step = { do?: Action | Action[]; say: ReactNode }
-export type View = 'graph' | 'areas' | 'files' | 'diff' | 'remote'
+// `fails` marks a step whose command is meant to fail, such as a refused push. Tests check it.
+export type Step = { do?: Action | Action[]; say: ReactNode; fails?: boolean }
+export type Script = { start: World; steps: Step[] }
+type SimpleView = 'graph' | 'areas' | 'files' | 'diff' | 'remote' | 'bisect'
+// blame:<file> shows the blame of one file.
+export type View = SimpleView | `blame:${string}`
 
-const viewTitle: Record<View, string> = {
+const isBlame = (v: View): v is `blame:${string}` => v.startsWith('blame:')
+const titles: Record<SimpleView, string> = {
   graph: 'History graph',
   areas: 'Where your changes are',
   files: 'Files in your folder',
   diff: 'What changed',
   remote: '',
+  bisect: 'Bisect search',
 }
+const viewTitle = (v: View) => (isBlame(v) ? 'Who changed each line' : titles[v])
 
 const asList = (a: Step['do']) => (a === undefined ? [] : Array.isArray(a) ? a : [a])
 
@@ -68,7 +76,7 @@ export function ScriptedDemo({ start, steps, views }: { start: World; steps: Ste
           v === 'remote' ? (
             <RemoteView key={v} world={result.world} flow={flow} />
           ) : (
-            <Panel key={v} title={viewTitle[v]}>
+            <Panel key={v} title={viewTitle(v)}>
               <ViewBody view={v} world={result.world} />
             </Panel>
           ),
@@ -107,6 +115,8 @@ function ViewBody({ view, world }: { view: View; world: World }) {
   if (view === 'graph') return <LocalGraph world={world} />
   if (view === 'areas') return <AreasDiagram world={world} />
   if (view === 'files') return <FilesView world={world} />
+  if (view === 'bisect') return <BisectView world={world} />
+  if (isBlame(view)) return <BlameView world={world} path={view.slice('blame:'.length)} />
   return <DiffView world={world} />
 }
 
@@ -135,7 +145,12 @@ function describe(a: Action): ReactNode {
   }
   if (a.kind === 'write') return <span className="text-[#c3c2b7]"># You edit {a.path} and save it.</span>
   if (a.kind === 'delete') return <span className="text-[#c3c2b7]"># You delete {a.path}.</span>
-  return <span className="text-[#c3c2b7]"># Sam pushes from their own computer.</span>
+  if (a.kind === 'remote-merge') return <span className="text-[#c3c2b7]"># Sam merges the pull request for {a.branch} on the website.</span>
+  return (
+    <span className="text-[#c3c2b7]">
+      # Sam pushes to {a.branch ?? 'main'} from their own computer.
+    </span>
+  )
 }
 
 /** Terminal output with colors for diff lines and errors. */

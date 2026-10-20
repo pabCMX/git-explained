@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import { assignLanes, type Ref } from '../git/refs'
 import { compare, type Commit } from '../git/sim'
@@ -78,31 +78,34 @@ export function CommitGraph({ commits, refs, lanes, columnOf, headId, empty = 'N
           aria-label={`Commit graph with ${commits.length} commits`}
           className="overflow-visible"
         >
-          {commits.flatMap((c) =>
-            c.parents
-              .map((p) => byId.get(p))
-              .filter((p) => !!p)
-              .map((p) => {
-                const a = pos(p)
-                const b = pos(c)
-                const d =
-                  a.y === b.y
-                    ? `M ${a.x} ${a.y} L ${b.x} ${b.y}`
-                    : `M ${a.x} ${a.y} L ${b.x - DX} ${a.y} C ${b.x - DX / 2} ${a.y}, ${b.x - DX / 2} ${b.y}, ${b.x} ${b.y}`
-                return (
-                  <motion.path
-                    key={`${p.id}-${c.id}`}
-                    initial={{ pathLength: 0, d }}
-                    animate={{ pathLength: 1, d }}
-                    transition={{ duration: 0.5 }}
-                    fill="none"
-                    stroke={b.y >= a.y ? color(c) : color(p)}
-                    strokeWidth={2}
-                    strokeLinecap="round"
-                  />
-                )
-              }),
-          )}
+          <AnimatePresence>
+            {commits.flatMap((c) =>
+              c.parents
+                .map((p) => byId.get(p))
+                .filter((p) => !!p)
+                .map((p) => {
+                  const a = pos(p)
+                  const b = pos(c)
+                  const d =
+                    a.y === b.y
+                      ? `M ${a.x} ${a.y} L ${b.x} ${b.y}`
+                      : `M ${a.x} ${a.y} L ${b.x - DX} ${a.y} C ${b.x - DX / 2} ${a.y}, ${b.x - DX / 2} ${b.y}, ${b.x} ${b.y}`
+                  return (
+                    <motion.path
+                      key={`${p.id}-${c.id}`}
+                      initial={{ pathLength: 0, d }}
+                      animate={{ pathLength: 1, d, opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.5 }}
+                      fill="none"
+                      stroke={b.y >= a.y ? color(c) : color(p)}
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                    />
+                  )
+                }),
+            )}
+          </AnimatePresence>
 
           {head && (
             <motion.circle
@@ -116,67 +119,73 @@ export function CommitGraph({ commits, refs, lanes, columnOf, headId, empty = 'N
             />
           )}
 
-          {commits.map((c) => {
-            const { x, y } = pos(c)
-            return (
-              <motion.g
-                key={c.id}
-                initial={{ x, y, scale: 0, opacity: 0 }}
-                animate={{ x, y, scale: 1, opacity: 1 }}
-                transition={spring}
-                onMouseEnter={() => setHover(c.id)}
-                onMouseLeave={() => setHover(null)}
-                className="cursor-default"
-              >
-                <circle r={R + 12} fill="transparent" />
-                <circle r={R} fill={color(c)} stroke="var(--surface)" strokeWidth={2} />
-                {c.parents.length > 1 && <circle r={4} fill="var(--surface)" />}
-                <text y={R + 17} textAnchor="middle" fontSize={11} fill="var(--ink-2)">
-                  {c.message.length > 14 ? c.message.slice(0, 13) + '…' : c.message}
-                </text>
-              </motion.g>
-            )
-          })}
-
-          {[...refsAt.entries()].flatMap(([id, list]) => {
-            const c = byId.get(id)!
-            const { x, y } = pos(c)
-            return list.map((r, k) => {
-              const text = r.current ? `HEAD → ${r.name}` : r.name
-              const w = text.length * 6.7 + 16
-              const ly = y - R - 8 - LABEL_H - k * (LABEL_H + LABEL_GAP)
-              const labelColor = laneColor(lanes, colorKey(r.name))
+          <AnimatePresence>
+            {commits.map((c) => {
+              const { x, y } = pos(c)
               return (
                 <motion.g
-                  key={`${r.kind}:${r.name}`}
-                  initial={{ x, y: ly, opacity: 0 }}
-                  animate={{ x, y: ly, opacity: 1 }}
+                  key={c.id}
+                  initial={{ x, y, scale: 0, opacity: 0 }}
+                  animate={{ x, y, scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.3, opacity: 0, transition: { duration: 0.5 } }}
                   transition={spring}
+                  onMouseEnter={() => setHover(c.id)}
+                  onMouseLeave={() => setHover(null)}
+                  className="cursor-default"
                 >
-                  <rect
-                    x={-w / 2}
-                    width={w}
-                    height={LABEL_H}
-                    rx={5}
-                    fill={r.current ? 'var(--ink)' : r.kind === 'head' ? 'var(--warn)' : 'var(--surface)'}
-                    stroke={r.kind === 'remote' ? 'var(--muted)' : r.current ? 'var(--ink)' : r.kind === 'head' ? 'var(--warn)' : labelColor}
-                    strokeWidth={r.kind === 'remote' ? 1.5 : 2}
-                    strokeDasharray={r.kind === 'remote' ? '4 3' : undefined}
-                  />
-                  <text
-                    y={14}
-                    textAnchor="middle"
-                    fontSize={11}
-                    fontFamily="var(--font-mono)"
-                    fontWeight={r.current ? 700 : 500}
-                    fill={r.current ? 'var(--surface)' : r.kind === 'head' ? '#0b0b0b' : r.kind === 'remote' ? 'var(--ink-2)' : 'var(--ink)'}
-                  >
-                    {text}
+                  <circle r={R + 12} fill="transparent" />
+                  <circle r={R} fill={color(c)} stroke="var(--surface)" strokeWidth={2} />
+                  {c.parents.length > 1 && <circle r={4} fill="var(--surface)" />}
+                  <text y={R + 17} textAnchor="middle" fontSize={11} fill="var(--ink-2)">
+                    {c.message.length > 14 ? c.message.slice(0, 13) + '…' : c.message}
                   </text>
                 </motion.g>
               )
-            })
-          })}
+            })}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {[...refsAt.entries()].flatMap(([id, list]) => {
+              const c = byId.get(id)!
+              const { x, y } = pos(c)
+              return list.map((r, k) => {
+                const text = r.current ? `HEAD → ${r.name}` : r.name
+                const w = text.length * 6.7 + 16
+                const ly = y - R - 8 - LABEL_H - k * (LABEL_H + LABEL_GAP)
+                const labelColor = laneColor(lanes, colorKey(r.name))
+                return (
+                  <motion.g
+                    key={`${r.kind}:${r.name}`}
+                    initial={{ x, y: ly, opacity: 0 }}
+                    animate={{ x, y: ly, opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={spring}
+                  >
+                    <rect
+                      x={-w / 2}
+                      width={w}
+                      height={LABEL_H}
+                      rx={5}
+                      fill={r.current ? 'var(--ink)' : r.kind === 'head' ? 'var(--warn)' : 'var(--surface)'}
+                      stroke={r.kind === 'remote' ? 'var(--muted)' : r.current ? 'var(--ink)' : r.kind === 'head' ? 'var(--warn)' : labelColor}
+                      strokeWidth={r.kind === 'remote' ? 1.5 : 2}
+                      strokeDasharray={r.kind === 'remote' ? '4 3' : undefined}
+                    />
+                    <text
+                      y={14}
+                      textAnchor="middle"
+                      fontSize={11}
+                      fontFamily="var(--font-mono)"
+                      fontWeight={r.current ? 700 : 500}
+                      fill={r.current ? 'var(--surface)' : r.kind === 'head' ? '#0b0b0b' : r.kind === 'remote' ? 'var(--ink-2)' : 'var(--ink)'}
+                    >
+                      {text}
+                    </text>
+                  </motion.g>
+                )
+              })
+            })}
+          </AnimatePresence>
         </svg>
 
         {hovered && <CommitTooltip commit={hovered} parent={hovered.parents[0] ? byId.get(hovered.parents[0]) : undefined} at={pos(hovered)} />}
@@ -200,6 +209,7 @@ function CommitTooltip({ commit, parent, at }: { commit: Commit; parent?: Commit
     >
       <div className="font-mono text-muted">{commit.id}</div>
       <div className="mt-1 font-medium text-ink">{commit.message}</div>
+      <div className="text-muted">by {commit.author}</div>
       <div className="mt-2 text-ink-2">
         {commit.parents.length > 1 ? 'Merge commit. It has 2 parents.' : changes.length ? 'Changed:' : 'No file changes.'}
       </div>

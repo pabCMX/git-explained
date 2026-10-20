@@ -191,12 +191,12 @@ export const BASIC: Record<string, Command> = {
       if (f.has('-a')) out.push(...Object.keys(w.local.tracking).sort().map((t) => `  remotes/${t}`))
       return ok(w, out)
     }
-    return createBranch(w, name)
+    return createBranch(w, name, names(args)[1])
   },
 
   switch: (w, args) => {
     if (args[0] === '-c') {
-      const r = createBranch(w, args[1] ?? '')
+      const r = createBranch(w, args[1] ?? '', args[2])
       return r.ok ? switchBranch(r.world, args[1]!) : r
     }
     return switchBranch(w, args[0] ?? '')
@@ -343,10 +343,12 @@ export function unstage(w: World, paths: string[]): World {
   return patchLocal(w, { index })
 }
 
-function createBranch(w: World, name: string): Result {
+// Makes a branch at HEAD, or at `start` if given.
+function createBranch(w: World, name: string, start?: string): Result {
   if (!name) return fail(w, 'Give the branch a name: git branch <name>')
   if (name in w.local.branches) return fail(w, `fatal: a branch named '${name}' already exists`)
-  const id = headId(w)
+  const id = start ? resolve(w, start) : headId(w)
+  if (start && !id) return fail(w, `fatal: not a valid object name: '${start}'`)
   if (!id) return fail(w, `fatal: make a commit first. A branch must point at a commit.`)
   return ok(patchLocal(w, { branches: { ...w.local.branches, [name]: id } }))
 }

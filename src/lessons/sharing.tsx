@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { DailyLoop } from '../components/Explainers'
-import { ScriptedDemo, type Step } from '../components/ScriptedDemo'
+import { ScriptedDemo, type Script, type Step } from '../components/ScriptedDemo'
 import { BREAD, built, onlyOnRemote, recipe, REMOTE_URL, SOUP } from './worlds'
 
 const garlicSoup = recipe('Leek soup', '- 2 leeks', '- 1 potato', '- 1 clove garlic', '- 1 liter water', '- 1 tsp salt')
@@ -98,6 +98,7 @@ const remoteSteps: Step[] = [
   },
   {
     do: 'git push',
+    fails: true,
     say: (
       <>
         Git refuses your push. The remote has a commit that you do not have. If Git accepted your push, Sam's commit would
@@ -262,6 +263,15 @@ export function RealLifeLesson() {
         </Link>. Nothing you do there
         can break anything.
       </p>
+      <p>
+        If you work on a project with many branches or many people, continue with the advanced lessons. They cover stash,
+        rebase, force push, cherry-pick, the reflog, blame and bisect.
+      </p>
     </>
   )
 }
+
+export const scripts: Script[] = [
+  { start: remoteStart, steps: remoteSteps },
+  { start: undoStart, steps: undoSteps },
+]

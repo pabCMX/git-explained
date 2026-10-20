@@ -30,12 +30,14 @@ export function remoteCommits(w: World): Commit[] {
 
 /**
  * Picks a row for each commit. Each branch claims the commits on its first-parent line, main first.
+ * Rows of labels such as origin/main share the color of main.
  * So after a fast-forward, the commits move up into the main row. Commits that no label reaches
  * (for example, from a deleted branch) keep the branch name they were made on.
  */
 export function assignLanes(commits: Commit[], refs: Ref[]): Map<string, string> {
   const byId = new Map(commits.map((c) => [c.id, c]))
-  const rank = (r: Ref) => (r.name === 'main' ? 0 : r.kind === 'branch' ? 1 : r.kind === 'remote' ? 2 : 3)
+  // main and origin/main claim first, so the commits of main stay in main's rows.
+  const rank = (r: Ref) => (r.name === 'main' ? 0 : r.name === 'origin/main' ? 1 : r.kind === 'branch' ? 2 : 3)
   const tips = refs
     .filter((r) => r.kind !== 'head')
     .sort((a, b) => rank(a) - rank(b) || (byId.get(a.id)?.order ?? 0) - (byId.get(b.id)?.order ?? 0))

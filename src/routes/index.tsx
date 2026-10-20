@@ -2,7 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { LocalGraph } from '../components/GraphViews'
 import { run, type World } from '../git/sim'
-import { lessons } from '../lessons/registry'
+import { lessonsIn, parts } from '../lessons/registry'
 import { BREAD, built, recipe, SOUP } from '../lessons/worlds'
 
 export const Route = createFileRoute('/')({ component: Home })
@@ -72,28 +72,33 @@ function Home() {
         </div>
       </section>
 
-      <h2 className="mb-4 text-xl font-semibold">Lessons</h2>
-      <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {lessons.map((l, i) => (
-          <li key={l.id}>
-            <Link
-              to="/learn/$lessonId"
-              params={{ lessonId: l.id }}
-              className="flex h-full gap-3 rounded-xl border border-line bg-surface p-4 transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-semibold tabular-nums">
-                {i + 1}
-              </span>
-              <span>
-                <span className="block font-semibold">{l.title}</span>
-                <span className="mt-1 block text-sm text-ink-2">{l.summary}</span>
-              </span>
-            </Link>
-          </li>
-        ))}
-      </ol>
+      {parts.map((part) => (
+        <section key={part.id} className="mb-10">
+          <h2 className="text-xl font-semibold">{part.title}</h2>
+          <p className="mt-1 mb-4 text-sm text-ink-2">{part.summary}</p>
+          <ol className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {lessonsIn(part.id).map((l) => (
+              <li key={l.id}>
+                <Link
+                  to="/learn/$lessonId"
+                  params={{ lessonId: l.id }}
+                  className="flex h-full gap-3 rounded-xl border border-line bg-surface p-4 transition hover:-translate-y-0.5 hover:shadow-md"
+                >
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-semibold tabular-nums">
+                    {l.n}
+                  </span>
+                  <span>
+                    <span className="block font-semibold">{l.title}</span>
+                    <span className="mt-1 block text-sm text-ink-2">{l.summary}</span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))}
 
-      <div className="mt-10 grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2">
         <Link to="/playground" className="rounded-xl border border-line bg-surface p-5 hover:shadow-md">
           <div className="font-semibold">Playground</div>
           <div className="mt-1 text-sm text-ink-2">Type real Git commands on a pretend folder and watch the diagrams change.</div>

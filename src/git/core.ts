@@ -284,31 +284,66 @@ export function threeWay(base: Files, ours: Files, theirs: Files, label: string)
     else if (o === b) result = t
     else if (t === b) result = o
     else {
-      conflicts.push(p)
-      result = conflictText(o ?? '', t ?? '', label)
+      const m = merge3(b ?? '', o ?? '', t ?? '', label)
+      if (m.conflict) conflicts.push(p)
+      result = m.text
     }
     if (result !== undefined) tree[p] = result
   }
   return { tree, conflicts }
 }
 
-// Like real Git, only the lines that both sides changed get conflict markers.
-function conflictText(ours: string, theirs: string, name: string): string {
-  const o = splitLines(ours)
-  const t = splitLines(theirs)
-  let start = 0
-  while (start < o.length && start < t.length && o[start] === t[start]) start++
-  let end = 0
-  while (end < o.length - start && end < t.length - start && o[o.length - 1 - end] === t[t.length - 1 - end]) end++
-  return [
-    ...o.slice(0, start),
-    '<<<<<<< HEAD',
-    ...o.slice(start, o.length - end),
-    '=======',
-    ...t.slice(start, t.length - end),
-    `>>>>>>> ${name}`,
-    ...o.slice(o.length - end),
-  ].join('\n')
+/**
+ * Line-level three-way merge, like diff3. Lines that only one side changed take that change.
+ * Only a block of lines that both sides changed in different ways gets conflict markers.
+ */
+export function merge3(base: string, ours: string, theirs: string, label: string) {
+  const B = splitLines(base)
+  const O = splitLines(ours)
+  const T = splitLines(theirs)
+  const mo = matchLines(B, O)
+  const mt = matchLines(B, T)
+  const same = (x: string[], y: string[]) => x.length === y.length && x.every((l, i) => l === y[i])
+  const out: string[] = []
+  let conflict = false
+  let bi = 0
+  let oi = 0
+  let ti = 0
+  while (true) {
+    // The next base line that is unchanged on both sides splits the files into blocks.
+    let j = bi
+    while (j < B.length && !(mo.has(j) && mt.has(j) && mo.get(j)! >= oi && mt.get(j)! >= ti)) j++
+    const oj = j < B.length ? mo.get(j)! : O.length
+    const tj = j < B.length ? mt.get(j)! : T.length
+    const b = B.slice(bi, j)
+    const o = O.slice(oi, oj)
+    const t = T.slice(ti, tj)
+    if (same(o, b)) out.push(...t)
+    else if (same(t, b) || same(o, t)) out.push(...o)
+    else {
+      conflict = true
+      out.push('<<<<<<< HEAD', ...o, '=======', ...t, `>>>>>>> ${label}`)
+    }
+    if (j >= B.length) break
+    out.push(B[j]!)
+    bi = j + 1
+    oi = oj + 1
+    ti = tj + 1
+  }
+  return { text: out.length ? out.join('\n') + '\n' : '', conflict }
+}
+
+// Base line index -> line index in the other version, for lines that did not change.
+function matchLines(base: string[], other: string[]): Map<number, number> {
+  const map = new Map<number, number>()
+  let i = 0
+  let j = 0
+  for (const op of diffLines(base, other)) {
+    if (op.kind === 'same') map.set(i++, j++)
+    else if (op.kind === 'del') i++
+    else j++
+  }
+  return map
 }
 
 /** Refs that point at a commit, for labels such as "HEAD -> main, origin/main". */
@@ -325,10 +360,11 @@ export const splitLines = (s: string) => (s === '' ? [] : s.replace(/\n$/, '').s
 
 export type DiffLine = { kind: 'same' | 'add' | 'del'; text: string }
 
+/** Line diff of two file contents. */
+export const lineDiff = (a: string, b: string) => diffLines(splitLines(a), splitLines(b))
+
 /** Line diff with a longest common subsequence table. Files here are small, so this is fast enough. */
-export function lineDiff(a: string, b: string): DiffLine[] {
-  const x = splitLines(a)
-  const y = splitLines(b)
+function diffLines(x: string[], y: string[]): DiffLine[] {
   const dp = Array.from({ length: x.length + 1 }, () => new Array<number>(y.length + 1).fill(0))
   for (let i = x.length - 1; i >= 0; i--)
     for (let j = y.length - 1; j >= 0; j--)

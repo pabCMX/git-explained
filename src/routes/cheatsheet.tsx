@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import type { Lesson } from '../lessons/registry'
 
 export const Route = createFileRoute('/cheatsheet')({
   head: () => ({ meta: [{ title: 'Cheat sheet · Git, from the start' }] }),
   component: CheatSheet,
 })
 
-const groups: { title: string; lesson: string; rows: [string, string][] }[] = [
+const groups: { title: string; lesson: Lesson['id']; advanced?: boolean; rows: [string, string][] }[] = [
   {
     title: 'Start',
     lesson: 'commits',
@@ -66,6 +67,65 @@ const groups: { title: string; lesson: string; rows: [string, string][] }[] = [
       ['git merge --abort', 'Stop a merge and go back to before it.'],
     ],
   },
+  {
+    title: 'Put work aside',
+    lesson: 'stash',
+    advanced: true,
+    rows: [
+      ['git stash', 'Put changes to tracked files on a shelf. Add -u for new files.'],
+      ['git stash list', 'Show what is on the shelf.'],
+      ['git stash pop', 'Put the newest stash back and remove it from the shelf.'],
+      ['git stash apply', 'Put the newest stash back and keep a copy on the shelf.'],
+      ['git stash drop', 'Delete the newest stash.'],
+    ],
+  },
+  {
+    title: 'Branches on a team',
+    lesson: 'team-branches',
+    advanced: true,
+    rows: [
+      ['git push -u origin <branch>', 'Push a new branch and connect it to the remote one.'],
+      ['git branch -a', 'List local and remote branches.'],
+      ['git fetch --prune', 'Remove labels of remote branches that were deleted.'],
+      ['git push origin --delete <branch>', 'Delete a branch on the remote.'],
+      ['git branch -D <name>', 'Delete a branch, also if its commits are not merged.'],
+    ],
+  },
+  {
+    title: 'Combine branches',
+    lesson: 'rebase',
+    advanced: true,
+    rows: [
+      ['git merge --no-ff <branch>', 'Always make a merge commit, also when a fast-forward is possible.'],
+      ['git merge --squash <branch>', 'Stage all changes of a branch as one change. Then commit.'],
+      ['git rebase <branch>', 'Replay your commits on top of another branch.'],
+      ['git pull --rebase', 'Fetch, then replay your commits on top of the remote ones.'],
+    ],
+  },
+  {
+    title: 'Rewrite your own commits',
+    lesson: 'rewrite',
+    advanced: true,
+    rows: [
+      ['git commit --amend', 'Replace the last commit with the staged changes. Add -m to change the message.'],
+      ['git reset --soft <id>', 'Move the branch. Changes stay staged.'],
+      ['git reset <id>', 'Move the branch. Changes stay in your folder, not staged.'],
+      ['git reset --hard <id>', 'Move the branch and make your folder match. Uncommitted changes are deleted.'],
+      ['git push --force-with-lease', 'Replace the remote branch, only if nobody else changed it.'],
+    ],
+  },
+  {
+    title: 'Copy, recover and investigate',
+    lesson: 'blame-bisect',
+    advanced: true,
+    rows: [
+      ['git cherry-pick <id>', 'Copy the change of one commit to this branch.'],
+      ['git reflog', 'List every place HEAD has been. Use it to find lost commits.'],
+      ['git branch <name> <id>', 'Make a branch at a commit, for example one from the reflog.'],
+      ['git blame <file>', 'Show who last changed each line, and in which commit.'],
+      ['git bisect start / good / bad / reset', 'Find the commit that broke something by halving the suspects.'],
+    ],
+  },
 ]
 
 function CheatSheet() {
@@ -80,25 +140,28 @@ function CheatSheet() {
         .
       </p>
       <div className="mt-8 flex flex-col gap-6">
-        {groups.map((g) => (
-          <section key={g.title} className="rounded-xl border border-line bg-surface">
-            <div className="flex items-baseline justify-between border-b border-line px-4 py-3">
-              <h2 className="font-semibold">{g.title}</h2>
-              <Link to="/learn/$lessonId" params={{ lessonId: g.lesson }} className="text-xs text-accent hover:underline">
-                Lesson
-              </Link>
-            </div>
-            <table className="w-full text-sm">
-              <tbody>
-                {g.rows.map(([cmd, text]) => (
-                  <tr key={cmd} className="border-b border-line last:border-0">
-                    <td className="w-[42%] px-4 py-2.5 align-top font-mono text-[13px] whitespace-nowrap">{cmd}</td>
-                    <td className="px-4 py-2.5 text-ink-2">{text}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
+        {groups.map((g, i) => (
+          <div key={g.title}>
+            {g.advanced && !groups[i - 1]?.advanced && <h2 className="mt-6 mb-4 text-xl font-semibold">Advanced</h2>}
+            <section className="rounded-xl border border-line bg-surface">
+              <div className="flex items-baseline justify-between border-b border-line px-4 py-3">
+                <h2 className="font-semibold">{g.title}</h2>
+                <Link to="/learn/$lessonId" params={{ lessonId: g.lesson }} className="text-xs text-accent hover:underline">
+                  Lesson
+                </Link>
+              </div>
+              <table className="w-full text-sm">
+                <tbody>
+                  {g.rows.map(([cmd, text]) => (
+                    <tr key={cmd} className="border-b border-line last:border-0">
+                      <td className="w-[42%] px-4 py-2.5 align-top font-mono text-[13px] whitespace-nowrap">{cmd}</td>
+                      <td className="px-4 py-2.5 text-ink-2">{text}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          </div>
         ))}
       </div>
     </main>

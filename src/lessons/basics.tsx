@@ -1,5 +1,5 @@
 import { VersionChaos } from '../components/Explainers'
-import { ScriptedDemo, type Step } from '../components/ScriptedDemo'
+import { ScriptedDemo, type Script, type Step } from '../components/ScriptedDemo'
 import { emptyWorld } from '../git/sim'
 import { BREAD, built, recipe, SOUP } from './worlds'
 
@@ -347,3 +347,9 @@ export function HistoryLesson() {
     </>
   )
 }
+
+export const scripts: Script[] = [
+  { start: commitStart, steps: commitSteps },
+  { start: stagingStart, steps: stagingSteps },
+  { start: historyStart, steps: historySteps },
+]
