@@ -1,4 +1,4 @@
-import { ScriptedDemo, type Script, type Step } from '../components/ScriptedDemo'
+import { Exercise, type Script, type Step } from '../components/Exercise'
 import type { Action } from '../git/sim'
 import { BREAD, built, recipe, REMOTE_URL, SOUP } from './worlds'
 
@@ -34,6 +34,7 @@ const rewriteSteps: Step[] = [
         place. Add <code>-m "new message"</code> to change the message too.
       </>
     ),
+    task: <>Amend the last commit with your fix to <code>cake.txt</code>.</>,
   },
   {
     do: [
@@ -45,6 +46,7 @@ const rewriteSteps: Step[] = [
       'git commit -am "icing fix"',
     ],
     say: <>Then you work on the icing and make three small, messy commits.</>,
+    task: <>Commit each change to <code>cake.txt</code>. You make three commits.</>,
   },
   {
     do: 'git reset --soft HEAD~3',
@@ -54,10 +56,12 @@ const rewriteSteps: Step[] = [
         in the staging area. Nothing is lost.
       </>
     ),
+    task: <>Do a soft reset back three commits. The changes stay staged.</>,
   },
   {
     do: 'git commit -m "Add chocolate icing"',
     say: <>You commit once. Three messy commits are now one clean commit. This is called <strong>squashing</strong>.</>,
+    task: <>Commit the staged changes as one commit.</>,
   },
   {
     do: 'git reset HEAD~1',
@@ -67,6 +71,7 @@ const rewriteSteps: Step[] = [
         of the staging area. They stay in your folder, so you can commit them in a different way.
       </>
     ),
+    task: <>Do a mixed reset back one commit. Keep the changes in your folder, but not staged.</>,
   },
   {
     do: 'git reset --hard',
@@ -76,6 +81,7 @@ const rewriteSteps: Step[] = [
         commit. The icing changes are gone. Be careful: Git cannot get back changes that were never committed.
       </>
     ),
+    task: <>Do a hard reset to delete the icing changes from the staging area and your folder.</>,
   },
 ]
 
@@ -86,7 +92,7 @@ export function RewriteLesson() {
         Before you share a branch, you can clean up its commits: fix the last one, join small ones, or undo some. Git does
         this by making new commits and moving the branch label.
       </p>
-      <ScriptedDemo start={rewriteStart} steps={rewriteSteps} views={['graph', 'areas']} />
+      <Exercise start={rewriteStart} steps={rewriteSteps} views={['graph', 'areas']} />
       <h2>The three kinds of reset</h2>
       <p>
         All three move the branch label to another commit. They differ in what happens to the staging area and your folder.
@@ -146,8 +152,9 @@ const pickSteps: Step[] = [
         You find the fix in the log. It is the second newest commit, so you can also name it <code>main~1</code>.
       </>
     ),
+    task: <>Look at the history of <code>main</code>. Find the commit "Fix: too much salt in soup".</>,
   },
-  { do: 'git switch printed', say: <>You switch to the printed branch.</> },
+  { do: 'git switch printed', say: <>You switch to the printed branch.</>, task: <>Switch to <code>printed</code>.</> },
   {
     do: 'git cherry-pick main~1',
     say: (
@@ -156,6 +163,7 @@ const pickSteps: Step[] = [
         the same message and change, but a new ID. The pie and cake stay on main.
       </>
     ),
+    task: <>Copy the commit "Fix: too much salt in soup" to <code>printed</code>.</>,
   },
 ]
 
@@ -166,7 +174,7 @@ export function CherryPickLesson() {
         Sometimes you need one commit from another branch, not all of them. A typical case: a fix on main that an older
         version also needs.
       </p>
-      <ScriptedDemo start={pickStart} steps={pickSteps} views={['graph', 'diff']} />
+      <Exercise start={pickStart} steps={pickSteps} views={['graph', 'diff']} />
       <h2>Good to know</h2>
       <ul>
         <li>
@@ -213,8 +221,9 @@ const reflogSteps: Step[] = [
   {
     do: 'git reset --hard HEAD~2',
     say: <>You want to undo one commit, but you type <code>HEAD~2</code>. Two commits disappear from main.</>,
+    task: <>Do a hard reset of <code>main</code> back two commits.</>,
   },
-  { do: 'git log --oneline', say: <><code>git log</code> does not show them. They look lost.</> },
+  { do: 'git log --oneline', say: <><code>git log</code> does not show them. They look lost.</>, task: <>Look at the history. The two commits are not there.</> },
   {
     do: 'git reflog',
     say: (
@@ -223,16 +232,19 @@ const reflogSteps: Step[] = [
         <code>HEAD@&#123;1&#125;</code> means "where HEAD was one move ago".
       </>
     ),
+    task: <>Look at the reflog to find the lost commits.</>,
   },
-  { do: 'git reset --hard HEAD@{1}', say: <>You reset back to that point. Everything is back.</> },
+  { do: 'git reset --hard HEAD@{1}', say: <>You reset back to that point. Everything is back.</>, task: <>Do a hard reset back to the commit "Add cake".</> },
   {
     do: 'git branch -d experiment',
     fails: true,
     say: <>Later you clean up and delete the experiment branch. <code>-d</code> refuses, because its commits are not merged.</>,
+    task: <>Try to delete <code>experiment</code> the safe way. Git refuses.</>,
   },
   {
     do: 'git branch -D experiment',
     say: <>You are sure, so you use <code>-D</code>. The two commits disappear from the graph.</>,
+    task: <>Delete <code>experiment</code> anyway with a force delete.</>,
   },
   {
     do: 'git reflog',
@@ -242,10 +254,12 @@ const reflogSteps: Step[] = [
         commit. You find "Try oat milk" and its ID, <code>{lostId}</code>.
       </>
     ),
+    task: <>Look at the reflog again. Find the commit "Try oat milk".</>,
   },
   {
     do: `git branch experiment ${lostId}`,
     say: <>You make a new branch at that ID. The commits are back in the graph.</>,
+    task: <>Get back the commit "Try oat milk" on a new branch <code>experiment</code>.</>,
   },
 ]
 
@@ -256,7 +270,7 @@ export function ReflogLesson() {
         Git almost never deletes a commit right away. When no branch points to a commit, it only stops showing it. The{' '}
         <strong>reflog</strong> helps you find it again.
       </p>
-      <ScriptedDemo start={reflogStart} steps={reflogSteps} views={['graph']} />
+      <Exercise start={reflogStart} steps={reflogSteps} views={['graph']} />
       <h2>Limits</h2>
       <ul>
         <li>The reflog is only on your computer. It is not pushed, and a fresh clone has an empty reflog.</li>
@@ -299,6 +313,7 @@ const blameSteps: Step[] = [
   {
     do: 'git blame soup.txt',
     say: <><code>git blame</code> prints the same information in the terminal.</>,
+    task: <>Show who last changed each line of <code>soup.txt</code>.</>,
   },
   {
     do: [write('soup.txt', soup('- 2 leeks', '- 1 potato', '- 1 clove garlic', '- 1 liter vegetable stock', '- 1 tsp salt')), 'git commit -am "Less salt again"', 'git blame soup.txt'],
@@ -308,6 +323,7 @@ const blameSteps: Step[] = [
         change, not the first.
       </>
     ),
+    task: <>Commit your change to <code>soup.txt</code>. Then look again at who last changed each line.</>,
   },
 ]
 
@@ -347,14 +363,17 @@ const bisectSteps: Step[] = [
         <strong>good</strong>. Git checks out a commit in the middle of the suspects.
       </>
     ),
+    task: <>Start a bisect. Mark the newest commit as bad and the first commit, "First soup", as good.</>,
   },
   {
     do: 'git bisect good',
     say: <>You read the file: "1 tsp salt". That is fine, so you tell Git <code>good</code>. Half of the suspects are cleared.</>,
+    task: <>Read <code>soup.txt</code>. It has 1 tsp salt, so mark this commit as good.</>,
   },
   {
     do: 'git bisect bad',
     say: <>This version has "1 tbsp salt". A tablespoon is three times more. Too salty: <code>bad</code>.</>,
+    task: <>This version has 1 tbsp salt. Mark it as bad.</>,
   },
   {
     do: 'git bisect good',
@@ -364,8 +383,9 @@ const bisectSteps: Step[] = [
         tbsp by mistake. Git does not check out that commit. Your folder still has the last version you tested.
       </>
     ),
+    task: <>Mark this commit as good. Git now names the first bad commit.</>,
   },
-  { do: 'git bisect reset', say: <><code>git bisect reset</code> takes you back to where you started.</> },
+  { do: 'git bisect reset', say: <><code>git bisect reset</code> takes you back to where you started.</>, task: <>End the bisect and go back to where you started.</> },
 ]
 
 export function BlameBisectLesson() {
@@ -376,13 +396,13 @@ export function BlameBisectLesson() {
         broke something that used to work?
       </p>
       <h2>Who changed this line?</h2>
-      <ScriptedDemo start={blameStart} steps={blameSteps} views={['blame:soup.txt']} />
+      <Exercise start={blameStart} steps={blameSteps} views={['blame:soup.txt']} />
       <p>
         Use blame to find the commit, then read its message to understand why. Websites such as GitHub show the same view.
         The name sounds negative, but the command is for context, not for finding someone at fault.
       </p>
       <h2>Which commit broke it?</h2>
-      <ScriptedDemo start={bisectStart} steps={bisectSteps} views={['bisect', 'files']} />
+      <Exercise start={bisectStart} steps={bisectSteps} views={['bisect', 'files']} />
       <p>
         Each answer removes about half of the suspects. With 1,000 commits, you need about 10 tests. If you can check "good"
         or "bad" with a script, <code>git bisect run &lt;script&gt;</code> does all the steps for you.

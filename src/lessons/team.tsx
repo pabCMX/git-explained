@@ -1,4 +1,4 @@
-import { ScriptedDemo, type Script, type Step } from '../components/ScriptedDemo'
+import { Exercise, type Script, type Step } from '../components/Exercise'
 import type { Action } from '../git/sim'
 import { BREAD, built, onlyOnRemote, recipe, REMOTE_URL, SOUP } from './worlds'
 
@@ -41,6 +41,7 @@ const stashSteps: Step[] = [
         the switch would overwrite your unfinished change.
       </>
     ),
+    task: <>Try to switch to <code>main</code>. Git refuses.</>,
   },
   {
     do: 'git stash',
@@ -50,10 +51,12 @@ const stashSteps: Step[] = [
         Watch the change move into the <strong>Stash</strong> column.
       </>
     ),
+    task: <>Put your unfinished change aside.</>,
   },
   {
     do: ['git switch main', write('bread.txt', recipe('Bread', '- 500 g flour', '- 7 g yeast', '- 300 ml water', 'Bake for 40 minutes at 220 °C.')), 'git commit -am "Add oven temperature"'],
     say: <>Now the switch works. You fix the bread on main and commit.</>,
+    task: <>Switch to <code>main</code>. Then commit the change to <code>bread.txt</code>.</>,
   },
   {
     do: ['git switch spicy', 'git stash list'],
@@ -63,6 +66,7 @@ const stashSteps: Step[] = [
         <code>stash@&#123;0&#125;</code>.
       </>
     ),
+    task: <>Go back to <code>spicy</code>. Then look at the list of stashed changes.</>,
   },
   {
     do: 'git stash pop',
@@ -72,6 +76,7 @@ const stashSteps: Step[] = [
         continue where you stopped.
       </>
     ),
+    task: <>Put your stashed change back in your folder and remove it from the stash.</>,
   },
 ]
 
@@ -82,7 +87,7 @@ export function StashLesson() {
         On a busy project, you often have to stop in the middle of something. You cannot commit half a change, and you cannot
         switch branches with it. The <strong>stash</strong> is a shelf for this kind of work.
       </p>
-      <ScriptedDemo start={stashStart} steps={stashSteps} views={['areas', 'graph']} />
+      <Exercise start={stashStart} steps={stashSteps} views={['areas', 'graph']} />
       <h2>Stash commands</h2>
       <ul>
         <li>
@@ -124,7 +129,7 @@ const teamSteps: Step[] = [
       </>
     ),
   },
-  { do: `git clone ${REMOTE_URL}`, say: <>You clone it.</> },
+  { do: `git clone ${REMOTE_URL}`, say: <>You clone it.</>, task: <>Clone the cookbook from <code>{REMOTE_URL}</code>.</> },
   {
     do: ['git switch -c pie', write('pie.txt', PIE), 'git add pie.txt', 'git commit -m "Add apple pie"'],
     say: (
@@ -133,6 +138,7 @@ const teamSteps: Step[] = [
         is a pie recipe, so you make a branch named <strong>pie</strong>.
       </>
     ),
+    task: <>Make a new branch <code>pie</code> and switch to it. Then commit the new file <code>pie.txt</code>.</>,
   },
   {
     do: 'git push -u origin pie',
@@ -143,6 +149,7 @@ const teamSteps: Step[] = [
         website you now open a <strong>pull request</strong>: a request to merge pie into main, where others can review it.
       </>
     ),
+    task: <>Send <code>pie</code> to <code>origin</code> and connect your branch to the remote one.</>,
   },
   {
     do: { kind: 'teammate', branch: 'seeds', from: 'main', path: 'bread.txt', content: SEEDS, message: 'Seeds on bread' },
@@ -156,6 +163,7 @@ const teamSteps: Step[] = [
         remote ones. Remote ones start with <code>remotes/origin/</code>.
       </>
     ),
+    task: <>Get the new commits and branches from the remote. Then list your branches and the remote branches.</>,
   },
   {
     do: 'git switch seeds',
@@ -165,6 +173,7 @@ const teamSteps: Step[] = [
         makes a local seeds branch from it.
       </>
     ),
+    task: <>Switch to the branch <code>seeds</code> from the remote.</>,
   },
   {
     do: { kind: 'remote-merge', branch: 'seeds', deleteBranch: true },
@@ -178,6 +187,7 @@ const teamSteps: Step[] = [
   {
     do: ['git switch main', 'git pull'],
     say: <>You update your main. Now it has the seeds.</>,
+    task: <>Switch to <code>main</code> and pull the new commits.</>,
   },
   {
     do: 'git fetch --prune',
@@ -187,6 +197,7 @@ const teamSteps: Step[] = [
         removes the labels of branches that are gone from the remote.
       </>
     ),
+    task: <>Fetch with prune to remove labels of remote branches that are gone.</>,
   },
   {
     do: 'git branch -d seeds',
@@ -196,6 +207,7 @@ const teamSteps: Step[] = [
         merged.
       </>
     ),
+    task: <>Delete your local <code>seeds</code> branch.</>,
   },
   {
     do: ['git switch pie', 'git merge main', 'git push'],
@@ -205,15 +217,17 @@ const teamSteps: Step[] = [
         together. Then push. The pull request shows the new commits.
       </>
     ),
+    task: <>Switch to <code>pie</code> and merge <code>main</code> into it. Then push <code>pie</code>.</>,
   },
   {
     do: { kind: 'remote-merge', branch: 'pie', deleteBranch: true },
     say: <>Your pull request is approved, and Sam merges it on the website.</>,
   },
-  { do: ['git switch main', 'git pull'], say: <>You update your main. Now it has the pie.</> },
+  { do: ['git switch main', 'git pull'], say: <>You update your main. Now it has the pie.</>, task: <>Switch to <code>main</code> and pull the new commits.</> },
   {
     do: ['git fetch --prune', 'git branch -d pie'],
     say: <>You clean up the same way as before: remove the old remote label, then delete the local branch.</>,
+    task: <>Fetch with prune. Then delete your local <code>pie</code> branch.</>,
   },
 ]
 
@@ -224,7 +238,7 @@ export function TeamBranchesLesson() {
         When many people work on one repository, branches multiply quickly. This lesson shows the usual routine for feature
         branches on a shared remote: share your branch, look at other branches, and clean up after a merge.
       </p>
-      <ScriptedDemo start={teamStart} steps={teamSteps} views={['remote']} />
+      <Exercise start={teamStart} steps={teamSteps} views={['remote']} />
       <h2>Commands from this lesson</h2>
       <ul>
         <li>
@@ -289,6 +303,7 @@ const mergeWay: Step[] = [
         possible, so each feature stays visible as a group.
       </>
     ),
+    task: <>Merge <code>pie</code> into <code>main</code>.</>,
   },
 ]
 const squashWay: Step[] = [
@@ -300,10 +315,12 @@ const squashWay: Step[] = [
         <strong>Squash</strong>: Git puts all changes from pie into the staging area as one change, but does not commit.
       </>
     ),
+    task: <>Squash the changes from <code>pie</code> into the staging area of <code>main</code>. Do not commit yet.</>,
   },
   {
     do: 'git commit -m "Add apple pie"',
     say: <>You commit them as one clean commit on main. The "wip" commit does not appear in main's history.</>,
+    task: <>Commit the squashed changes as one commit.</>,
   },
   {
     do: 'git branch -d pie',
@@ -313,10 +330,12 @@ const squashWay: Step[] = [
         Now delete pie. Git refuses, because main does not contain the pie commits themselves, only a copy of their changes.
       </>
     ),
+    task: <>Try to delete <code>pie</code> the safe way. Git refuses.</>,
   },
   {
     do: 'git branch -D pie',
     say: <><code>-D</code> deletes it anyway. That is normal after a squash. Websites do the same with "Squash and merge".</>,
+    task: <>Delete <code>pie</code> anyway with a force delete.</>,
   },
 ]
 const rebaseWay: Step[] = [
@@ -329,6 +348,7 @@ const rebaseWay: Step[] = [
         old commits fade out. The new ones have the same changes and messages, but new IDs, because their parent changed.
       </>
     ),
+    task: <>Switch to <code>pie</code> and rebase it onto <code>main</code>.</>,
   },
   {
     do: ['git switch main', 'git merge pie'],
@@ -338,6 +358,7 @@ const rebaseWay: Step[] = [
         started pie today.
       </>
     ),
+    task: <>Switch to <code>main</code> and merge <code>pie</code> into it.</>,
   },
 ]
 
@@ -346,11 +367,11 @@ export function RebaseLesson() {
     <>
       <p>
         There are three common ways to bring a feature branch into main. They give the same files, but different history.
-        Each demo below starts from the same point.
+        Each exercise below starts from the same point.
       </p>
-      <ScriptedDemo start={integrateStart} steps={mergeWay} views={['graph']} />
-      <ScriptedDemo start={integrateStart} steps={squashWay} views={['graph']} />
-      <ScriptedDemo start={integrateStart} steps={rebaseWay} views={['graph']} />
+      <Exercise start={integrateStart} steps={mergeWay} views={['graph']} />
+      <Exercise start={integrateStart} steps={squashWay} views={['graph']} />
+      <Exercise start={integrateStart} steps={rebaseWay} views={['graph']} />
       <h2>Which one to use</h2>
       <ul>
         <li>
@@ -407,6 +428,7 @@ const forceSteps: Step[] = [
   {
     do: [{ kind: 'teammate', path: 'bread.txt', content: SEEDS, message: 'Seeds on bread' }, 'git fetch'],
     say: <>Sam pushes a commit to main, and you fetch it.</>,
+    task: <>Fetch the new commit from the remote.</>,
   },
   {
     do: 'git rebase origin/main',
@@ -416,6 +438,7 @@ const forceSteps: Step[] = [
         commit.
       </>
     ),
+    task: <>Rebase <code>pie</code> onto <code>origin/main</code>.</>,
   },
   {
     do: 'git push',
@@ -426,6 +449,7 @@ const forceSteps: Step[] = [
         never removes commits.
       </>
     ),
+    task: <>Try a normal push. Git refuses.</>,
   },
   {
     do: 'git push --force-with-lease',
@@ -435,6 +459,7 @@ const forceSteps: Step[] = [
         saw it. It is, so the push works.
       </>
     ),
+    task: <>Push again with lease to replace <code>pie</code> on the remote.</>,
   },
   {
     do: { kind: 'teammate', branch: 'pie', path: 'pie.txt', content: PIE2, message: 'More cinnamon' },
@@ -443,6 +468,7 @@ const forceSteps: Step[] = [
   {
     do: [write('crust.txt', recipe('Pie crust', '- 250 g flour', '- 125 g cold butter')), 'git add crust.txt', 'git commit -m "Add crust"'],
     say: <>You add a commit on your computer.</>,
+    task: <>Commit the new file <code>crust.txt</code>.</>,
   },
   {
     do: 'git push --force-with-lease',
@@ -454,6 +480,7 @@ const forceSteps: Step[] = [
         delete Sam's commit from the remote.
       </>
     ),
+    task: <>Try to push with lease again. Git refuses.</>,
   },
   {
     do: 'git pull --rebase',
@@ -462,8 +489,9 @@ const forceSteps: Step[] = [
         The right fix: <code>git pull --rebase</code>. It fetches Sam's commit and replays your new commit on top of it.
       </>
     ),
+    task: <>Pull with rebase to get Sam's commit and put your commit on top of it.</>,
   },
-  { do: 'git push', say: <>Now your commit comes after Sam's, so a normal push works. Nobody lost work.</> },
+  { do: 'git push', say: <>Now your commit comes after Sam's, so a normal push works. Nobody lost work.</>, task: <>Push <code>pie</code> with a normal push.</> },
 ]
 
 export function ForcePushLesson() {
@@ -474,7 +502,7 @@ export function ForcePushLesson() {
         ones, a normal push refuses. This lesson shows when a force push is fine, and how to do it without deleting the work
         of other people.
       </p>
-      <ScriptedDemo start={forceStart} steps={forceSteps} views={['remote']} />
+      <Exercise start={forceStart} steps={forceSteps} views={['remote']} />
       <h2>Rules for force push</h2>
       <ul>
         <li>

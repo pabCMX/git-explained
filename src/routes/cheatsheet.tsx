@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { CourseLayout, PageHeader } from '../components/Page'
 import type { Lesson } from '../lessons/registry'
 
 export const Route = createFileRoute('/cheatsheet')({
@@ -130,16 +131,17 @@ const groups: { title: string; lesson: Lesson['id']; advanced?: boolean; rows: [
 
 function CheatSheet() {
   return (
-    <main className="mx-auto max-w-4xl px-4 pt-8 pb-24">
-      <h1 className="text-3xl font-bold tracking-tight">Cheat sheet</h1>
-      <p className="mt-1 text-ink-2">
-        The commands from the lessons, in plain words. Words in &lt;angle brackets&gt; are for you to fill in. Try any of them in the{' '}
-        <Link to="/playground" className="text-accent underline">
-          playground
-        </Link>
-        .
-      </p>
-      <div className="mt-8 flex flex-col gap-6">
+    <CourseLayout>
+      <PageHeader eyebrow="Reference" title="Cheat sheet">
+        <p>
+          The commands from the lessons, in plain words. Words in &lt;angle brackets&gt; are for you to fill in. Try any of them in the{' '}
+          <Link to="/playground" className="text-accent underline">
+            playground
+          </Link>
+          .
+        </p>
+      </PageHeader>
+      <div className="mt-6 flex flex-col gap-6">
         {groups.map((g, i) => (
           <div key={g.title}>
             {g.advanced && !groups[i - 1]?.advanced && <h2 className="mt-6 mb-4 text-xl font-semibold">Advanced</h2>}
@@ -164,6 +166,6 @@ function CheatSheet() {
           </div>
         ))}
       </div>
-    </main>
+    </CourseLayout>
   )
 }

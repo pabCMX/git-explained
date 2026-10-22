@@ -1,5 +1,5 @@
 import { VersionChaos } from '../components/Explainers'
-import { ScriptedDemo, type Script, type Step } from '../components/ScriptedDemo'
+import { Exercise, type Script, type Step } from '../components/Exercise'
 import { emptyWorld } from '../git/sim'
 import { BREAD, built, recipe, SOUP } from './worlds'
 
@@ -69,6 +69,7 @@ const commitSteps: Step[] = [
         the history. Your files do not change. You do this one time for each project.
       </>
     ),
+    task: <>Start tracking the folder.</>,
   },
   {
     do: ['git add soup.txt', 'git commit -m "First version of the soup"'],
@@ -78,6 +79,7 @@ const commitSteps: Step[] = [
         about <code>git add</code> in the next lesson. The commit is the dot in the graph. Hover over it to see its details.
       </>
     ),
+    task: <>Stage <code>soup.txt</code>, then save it in your first commit.</>,
   },
   {
     do: { kind: 'write', path: 'soup.txt', content: recipe('Leek soup', '- 2 leeks', '- 1 potato', '- 2 carrots', '- 1 liter water', '- 1 tsp salt') },
@@ -96,6 +98,7 @@ const commitSteps: Step[] = [
         commit the <strong>parent</strong>. The green line in "What changed" is the line you added.
       </>
     ),
+    task: <>Stage <code>soup.txt</code> again, then commit the carrots.</>,
   },
   {
     do: [
@@ -108,6 +111,7 @@ const commitSteps: Step[] = [
         <code>3fa9c1e</code>. Git makes the ID from the content, so no two commits have the same ID.
       </>
     ),
+    task: <>Commit the salt change. Stage and commit in one command.</>,
   },
   {
     do: 'git log',
@@ -118,6 +122,7 @@ const commitSteps: Step[] = [
         branches.
       </>
     ),
+    task: <>Look at the list of commits.</>,
   },
 ]
 
@@ -129,7 +134,7 @@ export function CommitsLesson() {
         you changed and why. A commit is like a photo of the folder. You can always look at an old photo, and new photos
         never change old ones.
       </p>
-      <ScriptedDemo start={commitStart} steps={commitSteps} views={['files', 'diff', 'graph']} />
+      <Exercise start={commitStart} steps={commitSteps} views={['files', 'diff', 'graph']} />
       <h2>What makes a good commit</h2>
       <ul>
         <li>One idea for each commit. "Add carrots" is good. "Changes" is not.</li>
@@ -172,6 +177,7 @@ const stagingSteps: Step[] = [
         command until it is a habit.
       </>
     ),
+    task: <>Ask Git what changed.</>,
   },
   {
     do: 'git add bread.txt',
@@ -181,6 +187,7 @@ const stagingSteps: Step[] = [
         that you pack before you mail it.
       </>
     ),
+    task: <>Stage <code>bread.txt</code>.</>,
   },
   {
     do: 'git commit -m "Add bread recipe"',
@@ -190,6 +197,7 @@ const stagingSteps: Step[] = [
         staging area is empty again.
       </>
     ),
+    task: <>Save the staged bread recipe in a commit.</>,
   },
   {
     do: [
@@ -211,6 +219,7 @@ const stagingSteps: Step[] = [
         the next commit.
       </>
     ),
+    task: <>Stage only <code>soup.txt</code>. Do not stage <code>bread.txt</code>.</>,
   },
   {
     do: 'git commit -m "Use less salt in soup"',
@@ -219,6 +228,7 @@ const stagingSteps: Step[] = [
         The commit has only the soup change. Later, you can find or undo the salt change alone, without the bread test.
       </>
     ),
+    task: <>Commit the staged soup change.</>,
   },
   {
     do: ['git add bread.txt', 'git commit -m "Try rye flour"'],
@@ -228,6 +238,7 @@ const stagingSteps: Step[] = [
         all your changes belong together.
       </>
     ),
+    task: <>Stage <code>bread.txt</code>, then save it in its own commit.</>,
   },
 ]
 
@@ -238,7 +249,7 @@ export function StagingLesson() {
         You saw <code>git add</code> before <code>git commit</code> in the last lesson. Here you learn why there are two
         steps. Watch the colored labels: they show where each change is.
       </p>
-      <ScriptedDemo start={stagingStart} steps={stagingSteps} views={['areas', 'graph']} />
+      <Exercise start={stagingStart} steps={stagingSteps} views={['areas', 'graph']} />
       <h2>The short version</h2>
       <ul>
         <li>
@@ -281,6 +292,7 @@ const historySteps: Step[] = [
         a commit.
       </>
     ),
+    task: <>Look at the short list of commits.</>,
   },
   {
     do: 'git checkout HEAD~2',
@@ -291,6 +303,7 @@ const historySteps: Step[] = [
         folder to how it was then.
       </>
     ),
+    task: <>Go back to the commit "Add carrots", two commits before where you are.</>,
   },
   {
     say: (
@@ -309,6 +322,7 @@ const historySteps: Step[] = [
         Going back in time never deletes history.
       </>
     ),
+    task: <>Switch back to the <code>main</code> branch.</>,
   },
   {
     do: [{ kind: 'write', path: 'soup.txt', content: soupV('- a pinch of salt', ['- 2 carrots', '- 100 ml cream', '- black pepper']) }, 'git diff'],
@@ -318,6 +332,7 @@ const historySteps: Step[] = [
         <code>-</code> are removed. Add <code>--staged</code> to see the changes in the staging area.
       </>
     ),
+    task: <>Look at the lines you changed but did not commit.</>,
   },
 ]
 
@@ -328,7 +343,7 @@ export function HistoryLesson() {
         History is useful only if you can look at it. In this lesson you list the commits, open an old version, and come
         back.
       </p>
-      <ScriptedDemo start={historyStart} steps={historySteps} views={['graph', 'files']} />
+      <Exercise start={historyStart} steps={historySteps} views={['graph', 'files']} />
       <h2>Commands from this lesson</h2>
       <ul>
         <li>

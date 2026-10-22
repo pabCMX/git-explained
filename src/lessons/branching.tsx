@@ -1,4 +1,4 @@
-import { ScriptedDemo, type Script, type Step } from '../components/ScriptedDemo'
+import { Exercise, type Script, type Step } from '../components/Exercise'
 import { BREAD, built, recipe, SOUP } from './worlds'
 
 const spicy = (...extra: string[]) => recipe('Leek soup', '- 2 leeks', '- 1 potato', '- 1 liter water', '- 1 tsp salt', ...extra)
@@ -27,6 +27,7 @@ const branchSteps: Step[] = [
         makes a new label at the same commit. Nothing else changes. You are still on main.
       </>
     ),
+    task: <>Make a branch named <code>spicy</code>. Stay on <code>main</code>.</>,
   },
   {
     do: 'git switch spicy',
@@ -36,14 +37,17 @@ const branchSteps: Step[] = [
         <code>git switch -c spicy</code> does both steps at once.
       </>
     ),
+    task: <>Switch to the <code>spicy</code> branch.</>,
   },
   {
     do: [{ kind: 'write', path: 'soup.txt', content: spicy('- 1 red chili') }, 'git commit -am "Add chili"'],
     say: <>You add a chili and commit. The new commit gets its own row and color. The spicy label moves forward. main stays where it was.</>,
+    task: <>Commit the chili change.</>,
   },
   {
     do: [{ kind: 'write', path: 'soup.txt', content: spicy('- 2 red chilis', '- 1 tsp paprika') }, 'git commit -am "More heat"'],
     say: <>One more commit on spicy.</>,
+    task: <>Commit the new soup change on <code>spicy</code>.</>,
   },
   {
     do: 'git switch main',
@@ -53,6 +57,7 @@ const branchSteps: Step[] = [
         commit that main points at. The chili is safe in the spicy branch.
       </>
     ),
+    task: <>Switch back to <code>main</code>.</>,
   },
   {
     do: [{ kind: 'write', path: 'bread.txt', content: recipe('Bread', '- 500 g flour', '- 7 g yeast', '- 300 ml water', 'Bake for 35 minutes.') }, 'git commit -am "Shorter bake time"'],
@@ -62,6 +67,7 @@ const branchSteps: Step[] = [
         other one does not have.
       </>
     ),
+    task: <>Commit the bread change on <code>main</code>.</>,
   },
   {
     do: 'git switch spicy',
@@ -71,6 +77,7 @@ const branchSteps: Step[] = [
         switch, or Git stops you so that no work gets lost.
       </>
     ),
+    task: <>Switch to the <code>spicy</code> branch again.</>,
   },
 ]
 
@@ -81,7 +88,7 @@ export function BranchesLesson() {
         Sometimes you want to try an idea without risk. Without Git, you make a copy of the folder. With Git, you make a{' '}
         <strong>branch</strong>. A branch costs almost nothing, because it is only a label.
       </p>
-      <ScriptedDemo start={branchStart} steps={branchSteps} views={['graph', 'files']} />
+      <Exercise start={branchStart} steps={branchSteps} views={['graph', 'files']} />
       <h2>When to use a branch</h2>
       <ul>
         <li>To test an idea that maybe you will not keep.</li>
@@ -107,6 +114,7 @@ const mergeSteps: Step[] = [
         main.
       </>
     ),
+    task: <>Make a branch named <code>dessert</code> and switch to it. Then stage <code>pie.txt</code> and commit it.</>,
   },
   {
     do: ['git switch main', 'git merge dessert'],
@@ -117,14 +125,17 @@ const mergeSteps: Step[] = [
         <strong>fast-forward</strong>. Git makes no new commit.
       </>
     ),
+    task: <>Switch to <code>main</code>. Then merge <code>dessert</code> into it.</>,
   },
   {
     do: ['git switch -c vegan', { kind: 'write', path: 'soup.txt', content: recipe('Leek soup', '- 2 leeks', '- 1 potato', '- 1 liter vegetable stock', '- 1 tsp salt') }, 'git commit -am "Use vegetable stock"'],
     say: <>Now you start a branch named <strong>vegan</strong> and change the soup.</>,
+    task: <>Make a branch named <code>vegan</code> and switch to it. Then commit the soup change.</>,
   },
   {
     do: ['git switch main', { kind: 'write', path: 'bread.txt', content: recipe('Bread', '- 500 g flour', '- 7 g yeast', '- 300 ml water', '- 1 tsp sugar', 'Bake for 40 minutes.') }, 'git commit -am "Add sugar to bread"'],
     say: <>At the same time, someone commits a bread change on main. Both branches now have a new commit.</>,
+    task: <>Switch to <code>main</code>. Then commit the bread change.</>,
   },
   {
     do: 'git merge vegan',
@@ -134,6 +145,7 @@ const mergeSteps: Step[] = [
         has two parents. The hollow dot shows it. The two branches changed different files, so Git combines them without help.
       </>
     ),
+    task: <>Merge <code>vegan</code> into <code>main</code>.</>,
   },
   {
     do: 'git branch -d vegan',
@@ -143,6 +155,7 @@ const mergeSteps: Step[] = [
         includes them.
       </>
     ),
+    task: <>Delete the <code>vegan</code> branch.</>,
   },
 ]
 
@@ -177,10 +190,12 @@ const conflictSteps: Step[] = [
         under <code>=======</code> is from the other branch.
       </>
     ),
+    task: <>Try to merge <code>less-salt</code> into <code>main</code>. Git stops with a conflict.</>,
   },
   {
     do: 'git status',
     say: <><code>git status</code> lists the files with conflicts. Here there is only one.</>,
+    task: <>Look at which files have a conflict.</>,
   },
   {
     do: { kind: 'write', path: 'soup.txt', content: salt('- 1 tsp salt, then taste') },
@@ -199,6 +214,7 @@ const conflictSteps: Step[] = [
         writes the message for you.
       </>
     ),
+    task: <>Mark <code>soup.txt</code> as fixed. Then make the merge commit.</>,
   },
 ]
 
@@ -209,13 +225,13 @@ export function MergingLesson() {
         A branch is useful only if you can bring the work back. <code>git merge</code> takes the commits from another branch
         and adds them to the branch you are on.
       </p>
-      <ScriptedDemo start={mergeStart} steps={mergeSteps} views={['graph', 'files']} />
+      <Exercise start={mergeStart} steps={mergeSteps} views={['graph', 'files']} />
       <h2>When two changes collide</h2>
       <p>
         Git can combine changes on its own when they are in different files, or in different parts of the same file. If two
         branches change the same lines, Git asks you to decide.
       </p>
-      <ScriptedDemo start={conflictStart} steps={conflictSteps} views={['files', 'graph']} />
+      <Exercise start={conflictStart} steps={conflictSteps} views={['files', 'graph']} />
       <p>
         If a merge goes wrong and you want to stop, <code>git merge --abort</code> puts everything back to how it was before
         the merge.

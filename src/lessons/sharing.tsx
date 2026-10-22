@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { DailyLoop } from '../components/Explainers'
-import { ScriptedDemo, type Script, type Step } from '../components/ScriptedDemo'
+import { Exercise, type Script, type Step } from '../components/Exercise'
 import { BREAD, built, onlyOnRemote, recipe, REMOTE_URL, SOUP } from './worlds'
 
 const garlicSoup = recipe('Leek soup', '- 2 leeks', '- 1 potato', '- 1 clove garlic', '- 1 liter water', '- 1 tsp salt')
@@ -32,6 +32,11 @@ const remoteSteps: Step[] = [
         name for the remote.
       </>
     ),
+    task: (
+      <>
+        Download the cookbook from <code>{REMOTE_URL}</code>.
+      </>
+    ),
   },
   {
     do: [{ kind: 'write', path: 'soup.txt', content: garlicSoup }, 'git commit -am "Add garlic"'],
@@ -41,8 +46,13 @@ const remoteSteps: Step[] = [
         <code>origin/main</code>.
       </>
     ),
+    task: <>Commit the garlic change.</>,
   },
-  { do: 'git status', say: <><code>git status</code> tells you that you are ahead of the remote by 1 commit.</> },
+  {
+    do: 'git status',
+    say: <><code>git status</code> tells you that you are ahead of the remote by 1 commit.</>,
+    task: <>Check how your branch compares to the remote.</>,
+  },
   {
     do: 'git push',
     say: (
@@ -51,6 +61,7 @@ const remoteSteps: Step[] = [
         can get it.
       </>
     ),
+    task: <>Send your commit to the remote.</>,
   },
   {
     do: { kind: 'teammate', path: 'bread.txt', content: recipe('Bread', '- 500 g flour', '- 7 g yeast', '- 300 ml water', '- seeds on top', 'Bake for 40 minutes.'), message: 'Seeds on bread' },
@@ -69,6 +80,7 @@ const remoteSteps: Step[] = [
         it got from the remote. It does not ask the remote again.
       </>
     ),
+    task: <>Check the status again. Git still says you are up to date.</>,
   },
   {
     do: ['git fetch', 'git status'],
@@ -78,6 +90,7 @@ const remoteSteps: Step[] = [
         <code>origin/main</code> label moves forward. Now status says you are behind.
       </>
     ),
+    task: <>Get the new commits from the remote without a merge. Then check the status.</>,
   },
   {
     do: 'git pull',
@@ -87,6 +100,7 @@ const remoteSteps: Step[] = [
         Sam's seeds.
       </>
     ),
+    task: <>Pull Sam's commit into your <code>main</code>.</>,
   },
   {
     do: [
@@ -95,6 +109,7 @@ const remoteSteps: Step[] = [
       'git commit -am "Serve hot"',
     ],
     say: <>Now you and Sam both commit at the same time. Sam pushes first.</>,
+    task: <>Commit your soup change.</>,
   },
   {
     do: 'git push',
@@ -105,6 +120,7 @@ const remoteSteps: Step[] = [
         be lost. The fix is always the same: pull first.
       </>
     ),
+    task: <>Try to push. Git refuses.</>,
   },
   {
     do: 'git pull',
@@ -114,8 +130,13 @@ const remoteSteps: Step[] = [
         lines, you would fix a conflict, as in the merging lesson.
       </>
     ),
+    task: <>Pull Sam's new commit and merge it with yours.</>,
   },
-  { do: 'git push', say: <>Now the push works. The remote and your computer have the same history again.</> },
+  {
+    do: 'git push',
+    say: <>Now the push works. The remote and your computer have the same history again.</>,
+    task: <>Push again. This time it works.</>,
+  },
 ]
 
 export function RemotesLesson() {
@@ -126,7 +147,7 @@ export function RemotesLesson() {
         repository to a <strong>remote</strong>. Watch the two graphs. The top one is the remote. The bottom one is your
         computer.
       </p>
-      <ScriptedDemo start={remoteStart} steps={remoteSteps} views={['remote', 'files']} />
+      <Exercise start={remoteStart} steps={remoteSteps} views={['remote', 'files']} />
       <h2>The four sharing commands</h2>
       <ul>
         <li>
@@ -166,6 +187,7 @@ const undoSteps: Step[] = [
         that file, and Git cannot get them back, because they were never committed.
       </>
     ),
+    task: <>Put <code>soup.txt</code> back as it was in the last commit.</>,
   },
   {
     do: [{ kind: 'write', path: 'notes-to-self.txt', content: 'Buy leeks.\nCall grandma about the soup.\n' }, 'git add .'],
@@ -175,6 +197,7 @@ const undoSteps: Step[] = [
         go in the cookbook.
       </>
     ),
+    task: <>Stage all changes in the folder at once.</>,
   },
   {
     do: 'git restore --staged notes-to-self.txt',
@@ -184,10 +207,12 @@ const undoSteps: Step[] = [
         "add" is undone.
       </>
     ),
+    task: <>Take <code>notes-to-self.txt</code> out of the staging area. Keep the file in your folder.</>,
   },
   {
     do: [{ kind: 'write', path: 'soup.txt', content: sugarSoup }, 'git commit -am "Add sugar"'],
     say: <>You commit sugar in the soup. Later the family tastes it. It was a bad idea.</>,
+    task: <>Commit the sugar change to <code>soup.txt</code> only. Do not commit the note.</>,
   },
   {
     do: 'git revert HEAD',
@@ -197,6 +222,7 @@ const undoSteps: Step[] = [
         and the history shows what happened. This is the safe way to undo a commit, also after you pushed it.
       </>
     ),
+    task: <>Undo the commit "Add sugar" with a new commit.</>,
   },
 ]
 
@@ -207,7 +233,7 @@ export function UndoLesson() {
         Everyone makes mistakes. The right undo command depends on where the mistake is: in your folder, in the staging area,
         or in a commit.
       </p>
-      <ScriptedDemo start={undoStart} steps={undoSteps} views={['areas', 'graph']} />
+      <Exercise start={undoStart} steps={undoSteps} views={['areas', 'graph']} />
       <h2>Which undo do I need?</h2>
       <ul>
         <li>

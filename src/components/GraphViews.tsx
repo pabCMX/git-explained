@@ -56,7 +56,7 @@ function remoteGraphs(world: World) {
 }
 
 /**
- * The remote on top, this computer below. Pass every world of a demo as `reserve` to keep each graph
+ * The remote on top, this computer below. Pass every world of an exercise as `reserve` to keep each graph
  * as tall as its tallest version, so the lower panel does not move when the upper graph grows.
  */
 export function RemoteView({ world, flow, reserve = [] }: { world: World; flow: Flow; reserve?: World[] }) {
